@@ -1,0 +1,17 @@
+#+TITLE: Bring back programming
+#+DATE: <2026-07-06 Mon>
+#+PHILE: 0x02
+#+FILETAGS: :misc:programming:
+#+DESCRIPTION: Programming as sport should be encouraged
+#+DRAFT: nil
+
+This is a quick note.
+We need to bring back programming.
+Use obscure languages.
+Code for the love of it.
+
+I purposely use lisp for this blog, I write a lot of tooling in common lisp. Most backend code I write is C. These are the languages I love. You may love others, use them, please.
+
+We really need to appreciate coding as an art form again. Optimization has all but been lost, and 'AI' bloat code is cringeworthy.
+
+Thank you for your attention to this.

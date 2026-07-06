@@ -171,8 +171,10 @@
              (date (funcall get "DATE"))
              (tags (and (funcall get "FILETAGS")
                         (split-string (funcall get "FILETAGS") ":" t "[ \t]+")))
-             (draft (and (funcall get "DRAFT")
-                         (not (string-empty-p (funcall get "DRAFT"))))))
+             ;; #+DRAFT: t marks a draft; absent or nil/no/false/0 publishes
+             (draft (let ((v (funcall get "DRAFT")))
+                      (and v (not (member (downcase v)
+                                          '("" "nil" "no" "false" "0")))))))
         (unless phile
           (error "lameserver: %s has no #+PHILE: keyword" file))
         (push (list :file file
@@ -662,7 +664,13 @@ nothing but text ships."
          (org-export-with-broken-links 'mark)
          (coding-system-for-write 'utf-8)
          (make-backup-files nil)
-         (system-time-locale "C"))
+         (system-time-locale "C")
+         ;; htmlize fontifies src blocks in temp buffers; a daemon's UI mode
+         ;; hooks (indent-bars etc.) break or pollute that — export wants
+         ;; pure font-lock, so run every mode bare
+         (prog-mode-hook nil)
+         (text-mode-hook nil)
+         (org-mode-hook nil))
      ,@body))
 
 (defun lameserver--export-file (file outfile)
