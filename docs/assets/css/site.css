@@ -459,6 +459,17 @@ main {
   max-width: max-content;
   box-shadow: 0 0 18px rgba(0, 0, 0, 0.4);
 }
+
+/* only running text wraps around a floated section title; wide block
+   media (ansi art, frames, tables, code) drops below it instead of
+   colliding when the intro text is too short to clear the float */
+.phile-body .ansi-img,
+.phile-body .ansi-frame,
+.phile-body figure,
+.phile-body table,
+.phile-body pre:not(.lb):not(.drip) {
+  clear: both;
+}
 .ansi-missing { color: var(--red); padding: 0.6rem; }
 .share-fedi, .share-copy {
   font: inherit;
@@ -551,8 +562,10 @@ main {
 }
 .board .row-hex {
   position: absolute;
-  top: -0.72em;
+  top: 0;
   left: 2ch;
+  transform: translateY(-50%);       /* center the ┤ ├ arms on the border */
+  line-height: 1;
   background: var(--bg);
   padding: 0 0.5ch;
   color: var(--hue, var(--purple));
