@@ -100,11 +100,58 @@ main {
   padding-top: 0.8rem;
 }
 
-#banner {
-  display: block;
-  width: 100%;
-  height: 110px;
+/* the banner: JS rebuilds the fallback logo into a dither curtain */
+#banner { display: block; min-height: 108px; overflow: hidden; }
+#banner .lb { margin: 1.2rem auto 0.6rem; }
+#banner .bn {
+  font-family: 'Argon', monospace;
+  font-size: 12px;
+  line-height: 1.05;
+  text-align: center;
+  overflow: hidden;
+  cursor: crosshair;
 }
+#banner .g1 { color: #b6bac9; }
+#banner .g2 { color: #7e8497; }
+#banner .g3 { color: #565b6e; }
+#banner .ap { color: var(--pink); }
+#banner .ac { color: var(--cyan); }
+#banner .cv {
+  color: #dfe1e8;
+  text-shadow: 0 0 12px rgba(248, 248, 242, 0.28);
+}
+#banner .lit {
+  color: var(--fg);
+  text-shadow: 0 0 8px rgba(248, 248, 242, 0.7), 0 0 18px rgba(255, 121, 198, 0.4);
+}
+#banner .cv.lit {
+  color: var(--pink);
+  text-shadow: 0 0 10px rgba(255, 121, 198, 0.8);
+}
+
+/* ---------------- lameblock: the hand-drawn font ---------------- */
+
+.hue-pink   { --hue: var(--pink); }
+.hue-purple { --hue: var(--purple); }
+.hue-cyan   { --hue: var(--cyan); }
+.hue-green  { --hue: var(--green); }
+.hue-orange { --hue: var(--orange); }
+
+/* letters alternate two shades of the piece's hue; bottom row and
+   dust sink into shadow.  Gray (no hue class) = newsletter mono. */
+.lb {
+  font-family: 'Argon', monospace;
+  font-size: min(13px, calc((100vw - 3rem) * 1.61 / var(--cols, 67)));
+  line-height: 1.05;
+  width: max-content;
+  max-width: 100%;
+  margin: 1.6rem auto 0.5rem;
+  overflow: hidden;
+}
+.lb .hi { color: var(--hue, #c3c7d6); }
+.lb .lo { color: color-mix(in srgb, var(--hue, #878da2) 62%, var(--bg)); }
+.lb .sh { color: #4b4f63; }
+.lb .hi { text-shadow: 0 0 14px color-mix(in srgb, var(--hue, #9aa) 30%, transparent); }
 
 .masthead {
   display: flex;
@@ -139,8 +186,8 @@ main {
   padding: 0.3rem 1ch 0.4rem;
   background: var(--bg-deep);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--pink);
-  border-right: 4px solid var(--pink);
+  border-left: 4px solid var(--comment);
+  border-right: 4px solid var(--comment);
   font-size: 0.95rem;
 }
 /* the BBS "current area" field: an inverse-video chip on the right */
@@ -176,37 +223,43 @@ main {
 .menu a:hover .hot, .menu a.active .hot { color: var(--bg); }
 .menu a:not(:hover) .hot { text-shadow: 0 0 8px rgba(255, 121, 198, 0.7); }
 
-/* ---------------- the diz card ---------------- */
+/* ---------------- phile head: the newsletter masthead ---------------- */
 
-/* LORD-style vertical fade, brightest at the top of the card */
-.dz0 { color: var(--fg); text-shadow: 0 0 10px rgba(248, 248, 242, 0.35); }
-.dz1 { color: var(--pink); text-shadow: var(--glow-pink); }
-.dz2 { color: var(--purple); text-shadow: none; }
-.dz3 { color: var(--comment); text-shadow: none; }
-
-/* Every phile opens with a FILE_ID.DIZ release card.  The --cols var
-   is the card's width in characters, set at build time, so the font
-   scales to always fit the column.  0.62 ≈ Argon glyph aspect. */
-.diz {
-  font-family: 'Argon', monospace;
-  font-size: min(13px, calc((100vw - 3rem) * 1.61 / var(--cols, 74)));
-  line-height: 1.05;
-  width: max-content;
-  max-width: 100%;
-  margin: 1.8rem auto 0.6rem;
-  color: var(--comment);
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 121, 198, 0.07), transparent 65%),
-    var(--bg-deep);
-  overflow: hidden;
-}
-
-.diz-tagline {
+.pre-quote {
   text-align: center;
   color: var(--comment);
-  font-style: italic;
-  font-size: 0.9rem;
-  margin: 0 0 2rem;
+  font-size: 0.85rem;
+  margin-top: 1.6rem;
+}
+
+/* ▌ phile 0xNN │ an official lameserver public transmission │ date ▐ */
+.issue {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+  border-block: 1px solid var(--line);
+  padding: 0.2rem 1ch;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: #b6bac9;
+}
+.issue::before { content: '▌'; color: var(--hue, var(--comment)); }
+.issue::after { content: '▐'; color: var(--hue, var(--comment)); }
+.issue .i-cell { white-space: nowrap; }
+.issue .i-mid {
+  flex: 1;
+  text-align: center;
+  color: var(--comment);
+  border-inline: 1px solid var(--line);
+  padding-inline: 1ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.issue-sub {
+  text-align: right;
+  color: var(--comment);
+  font-size: 0.8rem;
+  margin: 0.35rem 0 2.2rem;
 }
 
 .tag { color: var(--orange); }
@@ -216,47 +269,34 @@ main {
 .sig.ok:hover { background: var(--green); color: var(--bg); }
 .sig.none { color: var(--red); }
 
-/* ACiD-style numbered section headings: a heavy block cluster leads the
-   text, and h2s sit on a shelf that dissolves into dust to the right.
-   ox-html emits <span class="section-number-N">…</span> inside each hN. */
+/* Section headings, newsletter style: level-1 sections open with the
+   heading drawn big in lameblock (injected at export); the real hN
+   beneath it is a quiet dashed rule with the lowercase name — the
+   infofile idiom.  Deeper levels are letter-spaced whispers. */
 .phile-body h2, .phile-body h3, .phile-body h4, .phile-body h5 {
   font-weight: 400;
   margin: 2.2rem 0 0.8rem;
   cursor: pointer;
+  text-transform: lowercase;
 }
+.phile-body .lb { margin-top: 3rem; margin-bottom: 0; }
 .phile-body h2 {
-  color: var(--pink);
-  text-shadow: var(--glow-pink);
-  font-size: 1.15rem;
-  margin-top: 2.8rem;
-  overflow: hidden;               /* clips the shelf on narrow screens */
-  background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent 60%);
+  font-size: 0.85rem;
+  color: var(--comment);
+  border-block: 1px dashed var(--line);
+  padding: 0.12rem 1ch;
 }
-.phile-body h3 { color: var(--cyan); text-shadow: var(--glow-cyan); font-size: 1.02rem; }
-.phile-body h4 { color: var(--purple); text-shadow: var(--glow-purple); font-size: 1rem; }
-.phile-body h5 { color: var(--green); font-size: 0.95rem; }
-
-.phile-body h2::before { content: '█▓▒░ '; text-shadow: none; opacity: 0.8; }
-.phile-body h2::after {
-  content: '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▓▓▓▒▒▒░░░ ░ ░  ·∙ .';
-  display: block;
-  white-space: nowrap;
-  line-height: 1.2;
-  font-size: 0.85em;
-  /* hard color steps, not a smooth fade — this is 16-color land */
-  background: linear-gradient(90deg,
-    var(--pink) 0 8ch, var(--purple) 8ch 14ch,
-    var(--cyan) 14ch 18ch, var(--purple) 18ch 22ch,
-    var(--comment) 22ch);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: none;
+.phile-body .lb + div > h2 { margin-top: 0.5rem; }
+.phile-body h3 {
+  color: #b6bac9;
+  font-size: 0.95rem;
+  letter-spacing: 0.45em;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 0.2rem;
 }
-.phile-body h3::before { content: '▓▒░ '; text-shadow: none; opacity: 0.8; }
-.phile-body h3::after  { content: ' ░▒▒░· ∙ .'; text-shadow: none; opacity: 0.55; }
-.phile-body h4::before { content: '▒░ '; text-shadow: none; opacity: 0.8; }
-.phile-body h5::before { content: '» '; color: var(--comment); }
+.phile-body h4 { color: var(--comment); font-size: 0.9rem; letter-spacing: 0.3em; }
+.phile-body h5 { color: var(--comment); font-size: 0.85rem; }
+.phile-body h5::before { content: '» '; }
 
 .phile-body .section-number-2, .phile-body .section-number-3,
 .phile-body .section-number-4, .phile-body .section-number-5 {
@@ -270,8 +310,15 @@ main {
 
 /* ---------------- body copy ---------------- */
 
-.phile-body { max-width: 80ch; }
-.phile-body p { margin: 0 0 1rem; }
+/* newsletter body: justified monospace with first-line indents,
+   a shade dimmer than pure white, like the infofiles */
+.phile-body { max-width: 80ch; color: rgba(248, 248, 242, 0.84); }
+.phile-body p {
+  margin: 0 0 1rem;
+  text-align: justify;
+  text-indent: 5ch;
+}
+.phile-body li p { text-align: left; text-indent: 0; }
 .phile-body ul, .phile-body ol { margin: 0 0 1rem 2.2ch; }
 .phile-body li { margin-bottom: 0.2rem; }
 
@@ -395,14 +442,16 @@ main {
   line-height: 1.15;
   margin: 2.4rem 0 1.6rem;
   letter-spacing: 0.1em;
-  /* stepped color bands marching in 3ch jumps: ANSI color cycling */
+  /* stepped bands of the phile's hue marching in 3ch jumps */
   background: repeating-linear-gradient(90deg,
-    var(--pink) 0 3ch, var(--purple) 3ch 6ch, var(--cyan) 6ch 9ch);
+    var(--hue, var(--comment)) 0 3ch,
+    color-mix(in srgb, var(--hue, var(--comment)) 55%, var(--bg)) 3ch 6ch,
+    var(--comment) 6ch 9ch);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 8px rgba(189, 147, 249, 0.35));
-  animation: march 1.8s steps(3) infinite;
+  filter: drop-shadow(0 0 8px rgba(189, 147, 249, 0.25));
+  animation: march 2.4s steps(3) infinite;
 }
 @keyframes march {
   to { background-position-x: 9ch; }
@@ -435,55 +484,52 @@ main {
 .board-hint { color: var(--comment); font-size: 0.8rem; margin-left: auto; }
 #filter-state { color: var(--orange); font-size: 0.85rem; }
 
-/* the board is a pack view: each phile is a FILE_ID.DIZ card —
-   block rules top and bottom, thumb as the logo, title as the
-   release name.  Selection lights the whole card. */
+/* the board is a pack view: thin single-line boxes with the phile
+   number breaking the top border — the infofile box idiom.  Each
+   card carries its phile's hue; hover is the modern layer: a lift,
+   a glow, the border waking up. */
 .board {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(36ch, 1fr));
-  gap: 1.4rem 1.8ch;
+  gap: 1.6rem 1.8ch;
 }
 .board .row {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--bg-deep);
-  border-inline: 3px solid var(--line);
-  padding: 0 1.2ch;
+  border: 1px solid var(--line);
+  padding: 0.9rem 1.4ch 0;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease,
+              transform 0.18s ease, background 0.18s ease;
 }
-.board .card-top, .board .card-bot {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  line-height: 1;
-  font-size: 13px;
-  margin-inline: -1.2ch;
-  background: linear-gradient(90deg,
-    var(--pink) 0 6ch, var(--purple) 6ch 12ch,
-    var(--comment) 12ch 20ch, var(--line) 20ch);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.board .row-hex {
+  position: absolute;
+  top: -0.72em;
+  left: 2ch;
+  background: var(--bg);
+  padding: 0 0.5ch;
+  color: var(--hue, var(--purple));
+  font-size: 0.9rem;
 }
-.board .card-bot { margin-top: auto; }
 .board .row-thumb {
   display: flex;
   justify-content: center;
-  padding: 0.5rem 0 0.35rem;
+  padding: 0.3rem 0 0.35rem;
 }
 .board .row-thumb .ansi-art {
   font-size: 6px;
   background: none;
   overflow: hidden;
+  filter: saturate(0.85);
+  transition: filter 0.18s ease;
 }
 .board .row-head { text-align: center; margin-bottom: 0.3rem; }
 .board .row-link { color: var(--fg); }
 .board .row-link:hover { background: none; box-shadow: none; }
 /* the whole card is the click target */
 .board .row-link::after { content: ''; position: absolute; inset: 0; }
-.board .row-hex { color: var(--purple); }
-.board .row-title { color: var(--cyan); }
+.board .row-title { color: #b6bac9; }
 .board .row-desc {
   display: block;
   text-align: center;
@@ -496,29 +542,24 @@ main {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.2rem 2ch;
+  margin-top: auto;
   color: var(--comment);
   font-size: 0.85rem;
   padding-bottom: 0.45rem;
 }
 .board .row-tags .tag { position: relative; z-index: 1; }
 .board .row:hover, .board .row.sel {
-  border-color: var(--pink);
-  background: linear-gradient(180deg,
-    rgba(255, 121, 198, 0.09), var(--bg-deep) 55%);
-  box-shadow: 0 0 20px rgba(255, 121, 198, 0.16);
+  border-color: var(--hue, var(--pink));
+  background: color-mix(in srgb, var(--hue, var(--pink)) 4%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--hue, var(--pink)) 18%, transparent);
+  transform: translateY(-2px);
 }
-.board .row:hover .card-top, .board .row.sel .card-top,
-.board .row:hover .card-bot, .board .row.sel .card-bot {
-  background: repeating-linear-gradient(90deg,
-    var(--pink) 0 4ch, var(--purple) 4ch 8ch);
-  -webkit-background-clip: text;
-  background-clip: text;
+.board .row:hover .row-thumb .ansi-art, .board .row.sel .row-thumb .ansi-art {
+  filter: saturate(1.15);
 }
-.board .row:hover .row-hex, .board .row.sel .row-hex {
-  color: var(--yellow);
-  text-shadow: 0 0 8px rgba(241, 250, 140, 0.5);
+.board .row:hover .row-title, .board .row.sel .row-title {
+  color: var(--hue, var(--pink));
 }
-.board .row:hover .row-title, .board .row.sel .row-title { color: var(--pink); }
 
 /* ---------------- share + rails ---------------- */
 
@@ -638,10 +679,12 @@ main {
 
 @media (max-width: 640px) {
   body { font-size: 14px; }
-  #banner { height: 72px; }
+  #banner { min-height: 64px; }
   .board { grid-template-columns: 1fr; }
   .board-hint { display: none; }
   .masthead { font-size: 0.8rem; }
+  .issue .i-mid { display: none; }
+  .phile-body p { text-indent: 3ch; }
 }
 
 /* ---------------- reduced motion ---------------- */

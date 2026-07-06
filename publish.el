@@ -10,9 +10,10 @@
 ;;   + board listing, category pages, feed.xml, search.json
 ;;
 ;; Images in posts are converted to colored ANSI art at build time (chafa),
-;; parsed from SGR escapes into HTML by pure elisp.  Post titles are FIGlet.
-;; Missing tools degrade gracefully: no chafa -> plain <img>, no figlet ->
-;; styled heading, no htmlize -> unfontified code blocks.
+;; parsed from SGR escapes into HTML by pure elisp.  Titles and section
+;; headings are set in lameblock, the site's own hand-drawn block font.
+;; Missing tools degrade gracefully: no chafa -> plain <img>, no htmlize ->
+;; unfontified code blocks.
 ;;
 ;; Entry points:
 ;;   M-x lameserver-publish        build docs/
@@ -37,7 +38,7 @@
 (defconst lameserver--site-url "https://lameserver.net")
 (defconst lameserver--site-name "lameserver")
 (defconst lameserver--converter-version "v2"
-  "Bump to invalidate every cached ANSI/figlet conversion.")
+  "Bump to invalidate every cached ANSI conversion.")
 
 (defvar lameserver--gpg-key "44DF29BCAD9943D8"
   "Key philes are signed with (grim@samhain.su).  Nil = gpg default key.")
@@ -48,13 +49,13 @@
 (defconst lameserver--ansi-warn-bytes 300000)
 
 (defconst lameserver--dividers
-  ["▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▓▓▒▒░░ ∙ ·"
-   "▀▄▄▀▀▄▄▄▀▀▀▄▄ ▄▄▄ ▄▄ ▄ ∙ ·"
-   "░▒▓██▓▒░▒▓███▓▒░ ·∙ ·\n   ▀▀▀▀▀▀▀▓▒░ ·"
-   "∙ ·░░▒▒▓▓████▓▓▒▒░░· ∙"
-   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n ▀▓▒░  ▀▓▒░   ▀▓▒░  ·"
-   "░▒░▓█▓░▒░ ▒█▓ ░▓ ▒ ░ ·"
-   "· ∙ ░ ▒ ▓ █ ▓ ▒ ░ ∙ ·"]
+  ["·   ░ ▒▒ ░░▒▓▒░ ▒ ░   ·    ."
+   "─── ─────────── ░▒▓▒░ ── ─ ·"
+   "▄▄▄▄▄▄▓▓▒▒░░ ·    ·\n   ▀▀▓▒░ ·"
+   ".  · ▀▄▀▄ ░▒░ ▄▀▄▀ ·  ."
+   "░▒▓██▓▒░ · ▒█▓ ░▓ ▒ ░  ·"
+   "· x ░ xx ▒░ x ░░ ·  x  ."
+   "─ ── ▄██▓▒░ ·∙ .   ─ ─"]
   "Per-post divider strings, artscene style (multi-line via \\n);
 one is picked deterministically per phile.")
 
@@ -222,141 +223,199 @@ one is picked deterministically per phile.")
                                   (plist-get entry :slug))
                           (length lameserver--dividers))))
 
-;;;; ---------------------------------------------------------------- figlet
+;;;; ---------------------------------------------------------------- lameblock
 
-(defun lameserver--figlet (title &optional font width)
-  "FIGlet-render TITLE; nil when figlet is unavailable.  Cached."
-  (when-let* ((figlet (lameserver--tool "figlet")))
-    (let* ((font (or font "standard"))
-           (width (or width 120))
-           (ascii (replace-regexp-in-string "[^\x20-\x7e]" "" title))
-           (cache (lameserver--cache
-                   "figlet" (concat (secure-hash
-                                     'sha1 (format "%s|%s|%d|%s" ascii font width
-                                                   lameserver--converter-version))
-                                    ".txt"))))
-      (if (file-exists-p cache)
-          (with-temp-buffer (insert-file-contents cache) (buffer-string))
-        (when-let* ((out (lameserver--run figlet "-w" (number-to-string width)
-                                          "-f" font ascii)))
-          (with-temp-file cache (insert out))
-          out)))))
+;; A hand-drawn block font in the artscene tradition — CP437 blocks only
+;; (▀ ▄ █ ▌ ▐ ░ ▒ ▓), four rows tall, thick strokes.  No figlet: these
+;; letterforms are the site's own.  Rendered with per-letter shade
+;; alternation and a darker bottom row, one hue family per piece.
 
-;;;; ---------------------------------------------------------------- diz cards
+(defconst lameserver--lameblock
+  '((?a "▄████▄ " "▄▄▄▄▐█▌" "██▀▀▐█▌" "▀████▀ ")
+    (?b "██▄▄▄  " "██▀▀██▄" "██  ▐██" "██████▀")
+    (?c "▄████▄" "██▌ ▀▀" "██▌ ▄▄" "▀████▀")
+    (?d "  ▄▄▄██" "▄██▀▀██" "██▌ ▐██" "▀██████")
+    (?e "▄████▄ " "██▄▄▄██" "██▌▀▀▀▀" "▀█████▌")
+    (?f " ▄███▄" "▐█▌▀▀ " "████  " "▐█▌   ")
+    (?g "▄█████▌" "██▌ ██▌" "▀████▌ " "▄▄▄██▌ ")
+    (?h "██▄▄▄  " "██▀▀██▄" "██  ▐██" "██  ▐██")
+    (?i "▐█▌" "▄▄ " "██▌" "██▌")
+    (?j "  ▐█▌" "  ▄▄ " "  ██▌" "▀██▀ ")
+    (?k "██ ▄█▌" "██▄█▀ " "████▄ " "██ ▀█▌")
+    (?l "██▌ " "██▌ " "██▌ " "▀██▄")
+    (?m "▄█▄▄█▄▄ " "██▀██▀██" "██ ██ ██" "██ ██ ██")
+    (?n "▄█▄██▄ " "███▀▐██" "██▌ ▐██" "██▌ ▐██")
+    (?o "▄████▄ " "██▌ ▐██" "██▌ ▐██" "▀████▀ ")
+    (?p "▄█████▄" "██▌ ▐██" "██████▀" "██▌    ")
+    (?q "▄█████▌" "██▌ ██▌" "▀█████▌" "   ▐██▌")
+    (?r "▄█▄███▄" "███▀▀▀ " "██▌    " "██▌    ")
+    (?s "▄████▄" "██▄▄▄ " "▀▀▀██▌" "█████▀")
+    (?t " ▄█▄  " "▀███▀ " " ██▌  " " ▀██▄ ")
+    (?u "██  ██ " "██  ██ " "██▄▄██▄" "▀██▀▐██")
+    (?v "██▌ ▐██" "██▌ ▐██" "▐██▄██▌" " ▀███▀ ")
+    (?w "██ ██ ██" "██ ██ ██" "██▄██▄██" "▀██▀▀██▀")
+    (?x "▐█▄▄█▌" " ▀██▀ " " ▄██▄ " "▐█▀▀█▌")
+    (?y "██▌▐██" "▐████▌" "  ██▌ " " ▐█▌  ")
+    (?z "█████▌" "  ▄█▀ " " ▄█▀▄▄" "█████▌")
+    (?0 "▄████▄" "██▌▄██" "██▀▐██" "▀████▀")
+    (?1 "▄██▌" " ██▌" " ██▌" "▄███▄")
+    (?2 "▄███▄ " "▀▀▐██▌" " ▄█▀  " "█████▌")
+    (?3 "▄███▄ " " ▄▄██▀" " ▀▀▐█▌" "▀███▀ ")
+    (?4 "▄█▌▐█▌" "██▄▄██" "▀▀▀▐█▌" "   ▐█▌")
+    (?5 "█████▌" "██▄▄▄ " "▀▀▀██▌" "████▀ ")
+    (?6 "▄███▄ " "██▄▄▄ " "██▀▐█▌" "▀███▀ ")
+    (?7 "█████▌" "  ▄█▀ " " ▐█▌  " " ██▌  ")
+    (?8 "▄███▄ " "▐█▄▄█▌" "██▀▀██" "▀███▀ ")
+    (?9 "▄███▄ " "██ ▐█▌" "▀▀▀▐█▌" " ███▀ ")
+    (?? "▄███▄ " "▀▀▐██▌" "  ██  " "  ▄▄  ")
+    (?: " " "▄" " " "▄")
+    (?& "▄██▄  " "▐█▄█▌ " "██▀█▄█" "▀██▄█▌")
+    (?, " " " " "▄" "▀")
+    (?. " " " " " " "▄")
+    (?! "█▌" "█▌" "▀ " "▄ ")
+    (?' "█▌" "▀ " " " " ")
+    (?- "  " "▄▄" "  " "  ")
+    (?\s "  " "  " "  " "  "))
+  "The lameblock font: (CHAR ROW1 ROW2 ROW3 ROW4).")
 
-;; Every phile opens with a FILE_ID.DIZ-style release card: the title as a
-;; chunky figlet logo fading down LORD-style, release info rows, all inside
-;; a block border drawn in one <pre> so the columns stay true.
+(defconst lameserver--hues ["pink" "purple" "cyan" "green" "orange"]
+  "Accent hue families; each phile gets one, seeded from its number.")
 
-(defconst lameserver--diz-ramp ["dz0" "dz1" "dz1" "dz2" "dz2" "dz3"]
-  "Vertical color ramp classes, brightest first (see site.css).")
+(defun lameserver--hue (entry)
+  (aref lameserver--hues
+        (lameserver--seed (concat "hue" (plist-get entry :phile-hex)
+                                  (plist-get entry :slug))
+                          (length lameserver--hues))))
 
-(defun lameserver--diz-ramp-class (i n)
-  "Ramp class for row I of N rows, fading down the card."
-  (aref lameserver--diz-ramp
-        (min (1- (length lameserver--diz-ramp))
-             (/ (* i (length lameserver--diz-ramp)) (max 1 n)))))
+(defun lameserver--block-glyph (ch)
+  (cdr (assq (downcase ch) lameserver--lameblock)))
 
-(defun lameserver--cells-len (cells)
-  "Visible length of CELLS, a list of (TEXT CLASS HREF) triples."
-  (apply #'+ 0 (mapcar (lambda (c) (length (car c))) cells)))
+(defun lameserver--block-words (text)
+  "TEXT as a list of words; each word is (WIDTH . GLYPH-LIST)."
+  (let ((words '()))
+    (dolist (word (split-string (downcase text) " " t))
+      (let ((glyphs (delq nil (mapcar #'lameserver--block-glyph
+                                      (string-to-list word)))))
+        (when glyphs
+          (push (cons (apply #'+ (mapcar (lambda (g)
+                                           (apply #'max (mapcar #'length g)))
+                                         glyphs))
+                      glyphs)
+                words))))
+    (nreverse words)))
 
-(defun lameserver--cells-html (cells)
-  (mapconcat
-   (pcase-lambda (`(,text ,class ,href))
-     (let ((esc (lameserver--escape text)))
-       (cond (href (format "<a class=\"%s\" href=\"%s\">%s</a>" (or class "") href esc))
-             (class (format "<span class=\"%s\">%s</span>" class esc))
-             (t esc))))
-   cells ""))
+(defun lameserver--block-logo (text &optional hue max-cols)
+  "TEXT in the lameblock font: a <pre> of shaded letterforms.
+HUE names the accent family (nil = newsletter gray); wraps at MAX-COLS."
+  (let* ((max-cols (or max-cols 64))
+         (space-w 3)
+         (lines '())     ; bands of words
+         (line '()) (line-w 0)
+         (letter -1))
+    (dolist (word (lameserver--block-words text))
+      (let ((w (car word)))
+        (when (and line (> (+ line-w space-w w) max-cols))
+          (push (nreverse line) lines)
+          (setq line '() line-w 0))
+        (push word line)
+        (setq line-w (+ line-w (if (cdr line) space-w 0) w))))
+    (when line (push (nreverse line) lines))
+    (setq lines (nreverse lines))
+    (let* ((width (apply #'max 1 (mapcar
+                                  (lambda (l)
+                                    (+ (apply #'+ (mapcar #'car l))
+                                       (* space-w (1- (length l)))))
+                                  lines)))
+           (out '()))
+      (dolist (l lines)
+        ;; letters alternate two shades of the hue; the counter runs
+        ;; per band so all four rows of a glyph agree
+        (let ((band-start (1+ letter)))
+          (dotimes (row 4)
+            (let ((cells '()) (li (1- band-start)))
+              (dolist (word l)
+                (unless (eq word (car l))
+                  (push (make-string space-w ?\s) cells))
+                (dolist (g (cdr word))
+                  (cl-incf li)
+                  (let* ((line-str (nth row g))
+                         (gw (apply #'max (mapcar #'length g)))
+                         (padded (concat line-str
+                                         (make-string (- gw (length line-str)) ?\s))))
+                    (push (format "<span class=\"%s\">%s</span>"
+                                  (cond ((= row 3) "sh")
+                                        ((cl-evenp li) "hi")
+                                        (t "lo"))
+                                  (lameserver--escape padded))
+                          cells))))
+              (when (= row 3) (setq letter li))
+              (push (apply #'concat (nreverse cells)) out)))))
+      ;; a dust line under the piece, seeded from the text
+      (let ((state (string-to-number
+                    (substring (secure-hash 'sha1 text) 0 8) 16))
+            (dust '()))
+        (dotimes (_ width)
+          (setq state (lameserver--xorshift state))
+          (push (aref "  ·  ░ ▒  ▀ ▄   .      " (mod state 23)) dust))
+        (push (format "<span class=\"sh\">%s</span>"
+                      (apply #'string (nreverse dust)))
+              out))
+      (format "<pre class=\"lb%s\" style=\"--cols:%d\" aria-hidden=\"true\">%s</pre>"
+              (if hue (concat " hue-" hue) "")
+              width
+              (string-join (nreverse out) "\n")))))
 
-(defun lameserver--diz-line (cells inner-w edge-class &optional align)
-  "One bordered card row: CELLS padded to INNER-W between █ edges."
-  (let* ((len (lameserver--cells-len cells))
-         (pad (max 0 (- inner-w len)))
-         (lpad (if (eq align 'left) 2 (/ pad 2)))
-         (rpad (max 0 (- pad lpad))))
-    (concat (format "<span class=\"%s\" aria-hidden=\"true\">█</span>" edge-class)
-            (make-string lpad ?\s)
-            (lameserver--cells-html cells)
-            (make-string rpad ?\s)
-            (format "<span class=\"%s\" aria-hidden=\"true\">█</span>" edge-class))))
+;;;; ---------------------------------------------------------------- phile head
 
-(defun lameserver--diz-card (entry)
-  "The release card for ENTRY: bordered DIZ block + tagline."
-  (let* ((title (plist-get entry :title))
-         (fig (lameserver--figlet title "chunky" 72))
-         (fig-lines (when (and fig (not (string-blank-p fig)))
-                      (mapcar #'string-trim-right
-                              (split-string (string-trim-right fig) "\n"))))
-         (date (if (plist-get entry :time)
-                   (format-time-string "%Y-%m-%d" (plist-get entry :time))
-                 "undated"))
-         (info-cells
-          (list (list (format "phile %s" (plist-get entry :phile-hex)) "dc-purple" nil)
-                (list " ░ " "dz3" nil)
-                (list date nil nil)
-                (list " ░ " "dz3" nil)
-                (list (format "%d min read" (lameserver--reading-time
-                                             (plist-get entry :words)))
-                      nil nil)))
-         (cred-cells
-          (append
-           (cl-loop for tag in (plist-get entry :tags)
-                    append (list (list (format "[%s]" tag) "tag"
-                                       (format "/category/%s/" (lameserver--slugify tag)))
-                                 (list " " nil nil)))
-           (list (list "░ " "dz3" nil))
-           (if-let* ((sig (plist-get entry :sig)))
-               (list (list (format "sig ✓ 0x%s" (substring sig -16)) "sig ok" "source.org.asc")
-                     (list " " nil nil)
-                     (list "[pubkey]" "sig ok" "/pubkey.asc"))
-             (list (list "sig: none" "sig none" nil)))))
-         (title-cells (list (list (upcase title) "dz0" nil)))
-         (fig-w (apply #'max 0 (mapcar #'length (or fig-lines '()))))
-         (inner-w (max 46 (+ 4 (max fig-w
-                                    (lameserver--cells-len info-cells)
-                                    (lameserver--cells-len cred-cells)))))
-         (cols (+ inner-w 2))
-         ;; row plan: blank, figlet|title, blank, presents, info, creds, blank
-         (n-rows (+ 6 (if fig-lines (length fig-lines) 1)))
-         (row -1)
-         (next-edge (lambda () (lameserver--diz-ramp-class (cl-incf row) n-rows)))
-         (lines '()))
-    (push (format "<span class=\"dz1\" aria-hidden=\"true\">%s</span>"
-                  (make-string cols ?▄))
-          lines)
-    (push (lameserver--diz-line nil inner-w (funcall next-edge)) lines)
-    (if fig-lines
-        (let ((nf (length fig-lines)) (fi -1))
-          (dolist (fl fig-lines)
-            (cl-incf fi)
-            ;; pad every line to the logo's full width so per-line
-            ;; centering can't shear the letters apart
-            (push (lameserver--diz-line
-                   (list (list (concat fl (make-string (- fig-w (length fl)) ?\s))
-                               (lameserver--diz-ramp-class fi nf) nil))
-                   inner-w (funcall next-edge))
-                  lines)))
-      (push (lameserver--diz-line title-cells inner-w (funcall next-edge)) lines))
-    (push (lameserver--diz-line nil inner-w (funcall next-edge)) lines)
-    (push (lameserver--diz-line '(("∙ lameserver presents ∙" "dz3" nil))
-                                inner-w (funcall next-edge))
-          lines)
-    (push (lameserver--diz-line info-cells inner-w (funcall next-edge)) lines)
-    (push (lameserver--diz-line cred-cells inner-w (funcall next-edge)) lines)
-    (push (format "<span class=\"dz3\" aria-hidden=\"true\">%s</span>"
-                  (make-string cols ?▀))
-          lines)
+(defun lameserver--issue-bar (entry)
+  "The newsletter issue bar: ▌ phile 0xNN │ ... │ date ▐, plus a creds line."
+  (let ((date (if (plist-get entry :time)
+                  (format-time-string "%B %Y" (plist-get entry :time))
+                "undated")))
     (concat
+     "<div class=\"issue\" aria-hidden=\"false\">"
+     (format "<span class=\"i-cell\">phile %s</span>" (plist-get entry :phile-hex))
+     "<span class=\"i-cell i-mid\">an official lameserver public transmission</span>"
+     (format "<span class=\"i-cell\">%s</span>" (lameserver--escape date))
+     "</div>"
+     "<div class=\"issue-sub\">"
+     (mapconcat (lambda (tag)
+                  (format "<a class=\"tag\" href=\"/category/%s/\">[%s]</a> "
+                          (lameserver--slugify tag) (lameserver--escape tag)))
+                (plist-get entry :tags) "")
+     (format "· %d min read · " (lameserver--reading-time (plist-get entry :words)))
+     (if-let* ((sig (plist-get entry :sig)))
+         (format (concat "sig <a class=\"sig ok\" href=\"source.org.asc\" "
+                         "title=\"gpg --verify source.org.asc source.org\">"
+                         "&#10003; 0x%s</a> <a class=\"sig ok\" href=\"/pubkey.asc\">[pubkey]</a>")
+                 (substring sig -16))
+       "<span class=\"sig none\">sig: none</span>")
+     "</div>")))
+
+(defun lameserver--phile-head (entry)
+  "Masthead for a phile, ACiD-newsletter style: quote, logo, issue bar."
+  (let ((title (plist-get entry :title))
+        (desc (plist-get entry :description)))
+    (concat
+     (format "<header class=\"phile-head hue-%s\">" (lameserver--hue entry))
+     (if (string-blank-p (or desc ""))
+         ""
+       (format "<div class=\"pre-quote\">&#8216;%s&#8217;</div>"
+               (lameserver--escape desc)))
      (format "<h1 class=\"vh\">%s</h1>" (lameserver--escape title))
-     (format "<pre class=\"diz\" style=\"--cols:%d\">%s</pre>"
-             cols (string-join (nreverse lines) "\n"))
-     (let ((desc (plist-get entry :description)))
-       (if (string-blank-p (or desc ""))
-           ""
-         (format "<div class=\"diz-tagline\">.. %s ..</div>"
-                 (lameserver--escape desc)))))))
+     (lameserver--block-logo title (lameserver--hue entry))
+     (lameserver--issue-bar entry)
+     "</header>")))
+
+(defun lameserver--html-headline (headline contents info)
+  "Top-level org sections open with their name drawn in lameblock,
+newsletter-gray; the real heading beneath it becomes a thin rule."
+  (let ((out (org-html-headline headline contents info)))
+    (if (/= 1 (org-element-property :level headline))
+        out
+      (let ((raw (replace-regexp-in-string
+                  "[*/=~+_]" "" (or (org-element-property :raw-value headline) ""))))
+        (concat (lameserver--block-logo raw nil 56) out)))))
 
 ;;;; ---------------------------------------------------------------- ANSI art
 
@@ -658,7 +717,9 @@ nothing but text ships."
      "<header class=\"site-header\">"
      "<a class=\"skip\" href=\"#content\">skip to content</a>"
      "<!-- the space above can be used to advertise your lame BBS if you so desire. . .  - stc/acid, 1995 -->"
-     "<canvas id=\"banner\" aria-label=\"lameserver\"></canvas>"
+     "<div id=\"banner\" role=\"img\" aria-label=\"lameserver\">"
+     (lameserver--block-logo "lameserver" nil 90)
+     "</div>"
      (lameserver--masthead (or (plist-get args :masthead-right) "est. 2026"))
      (lameserver--menu-html (plist-get args :active) (plist-get args :loc))
      "</header>\n"
@@ -740,16 +801,18 @@ nothing but text ships."
          :active "board"
          :loc (format "board › %s" (plist-get entry :phile-hex))
          :body (concat
-                (lameserver--diz-card entry)
+                (lameserver--phile-head entry)
                 "<article class=\"phile-body\">" contents "</article>"
-                (format "<div class=\"divider\" aria-hidden=\"true\">%s</div>" divider)
+                (format "<div class=\"divider hue-%s\" aria-hidden=\"true\">%s</div>"
+                        (lameserver--hue entry) divider)
                 (lameserver--share-html entry)
                 (lameserver--neighbor-rail entry))
          :body-script "<script src=\"/assets/js/phile.js\" defer></script>")))))
 
 (org-export-define-derived-backend 'lameserver-html 'html
   :translate-alist '((template . lameserver--html-template)
-                     (link . lameserver--html-link))
+                     (link . lameserver--html-link)
+                     (headline . lameserver--html-headline))
   :options-alist '((:phile "PHILE" nil nil t)
                    (:thumb "THUMB" nil nil t)
                    (:draft "DRAFT" nil nil t)))
@@ -865,21 +928,19 @@ title as the release name, block rules top and bottom."
         (date (if (plist-get entry :time)
                   (format-time-string "%Y-%m-%d" (plist-get entry :time))
                 "undated")))
-    (format (concat "<li class=\"row\">"
-                    "<span class=\"card-top\" aria-hidden=\"true\">%s</span>"
+    (format (concat "<li class=\"row hue-%s\">"
+                    "<span class=\"row-hex\" aria-hidden=\"true\">┤ %s ├</span>"
                     "<span class=\"row-thumb\" aria-hidden=\"true\">%s</span>"
                     "<span class=\"row-head\">"
                     "<a class=\"row-link\" href=\"/phile/%s/\">"
-                    "<span class=\"row-hex\">[%s]</span> "
                     "<span class=\"row-title\">%s</span></a>%s</span>"
                     "<span class=\"row-desc\">%s</span>"
                     "<span class=\"row-foot\"><span class=\"row-date\">%s</span>"
                     "<span class=\"row-tags\">%s</span></span>"
-                    "<span class=\"card-bot\" aria-hidden=\"true\">%s</span>"
                     "</li>")
-            (make-string 80 ?▄)
-            (lameserver--thumb-html entry)
+            (lameserver--hue entry)
             hex
+            (lameserver--thumb-html entry)
             hex
             (lameserver--escape (plist-get entry :title))
             (if (plist-get entry :sig)
@@ -889,8 +950,7 @@ title as the release name, block rules top and bottom."
             (mapconcat (lambda (tag)
                          (format "<a class=\"tag\" href=\"/category/%s/\">[%s]</a>"
                                  (lameserver--slugify tag) (lameserver--escape tag)))
-                       (plist-get entry :tags) " ")
-            (make-string 80 ?▀))))
+                       (plist-get entry :tags) " "))))
 
 (defun lameserver--listing-page (title posts out-dir &optional lead)
   (let ((body
@@ -1036,8 +1096,6 @@ title as the release name, block rules top and bottom."
     (lameserver--with-export-env
      (unless (lameserver--tool "chafa")
        (lameserver--log "lameserver: chafa not found — images ship as plain <img>"))
-     (unless (lameserver--tool "figlet")
-       (lameserver--log "lameserver: figlet not found — titles ship as styled <h1>"))
      (unless (featurep 'htmlize)
        (lameserver--log "lameserver: htmlize not found — code blocks unfontified"))
      (lameserver--write-static)

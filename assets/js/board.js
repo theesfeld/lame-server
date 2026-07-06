@@ -48,7 +48,8 @@
 
   function phileOf(row) {
     var hex = row.querySelector('.row-hex');
-    return hex ? hex.textContent.replace(/[[\]]/g, '') : '';
+    var m = hex && hex.textContent.match(/0x[0-9a-f]+/i);
+    return m ? m[0] : '';
   }
 
   function ensureIndex() {

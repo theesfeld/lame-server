@@ -100,176 +100,154 @@
     });
   }
 
-  /* ---------------- the banner ---------------- */
+
+  /* ---------------- the banner: a dither curtain ---------------- */
+
+  /* "lameserver" set in the site's own hand-drawn lameblock font,
+     carved as negative space out of a curtain of shaded blocks that
+     hangs from the top of the page with a ragged bottom edge — the
+     trick from ACiD's 1995 member listings.  The server ships a plain
+     logo in #banner as the no-JS fallback; this rebuilds it live and
+     adds the pointer-light and idle shimmer. */
 
   var banner = document.getElementById('banner');
   if (!banner) return;
-  var ctx = banner.getContext('2d');
-  var W = 0, H = 0, DPR = 1;
-  var parts = [];
-  var mx = -9999, my = -9999;
-  var running = true;
 
-  var WORD = 'lameserver';
-  var GLYPHS = 'aekrst&?;{}~#$%λπΣ▓▒░'.split('');
-  var BASE = ['rgba(248,248,242,0.95)', 'rgba(248,248,242,0.6)'];
-  var ACCENT = ['#8be9fd', '#bd93f9', '#ff79c6', '#50fa7b'];
-  var CELL = 26;
-  var atlas = null;
-  var COLORS = BASE.concat(ACCENT);
+  var LOGO = [
+    '██▌  ▄████▄  ▄█▄▄█▄▄  ▄████▄  ▄████▄ ▄████▄  ▄█▄███▄ ██▌ ▐██ ▄████▄  ▄█▄███▄ ',
+    '██▌  ▄▄▄▄▐█▌ ██▀██▀██ ██▄▄▄██ ██▄▄▄  ██▄▄▄██ ███▀▀▀  ██▌ ▐██ ██▄▄▄██ ███▀▀▀  ',
+    '██▌  ██▀▀▐█▌ ██ ██ ██ ██▌▀▀▀▀ ▀▀▀██▌ ██▌▀▀▀▀ ██▌     ▐██▄██▌ ██▌▀▀▀▀ ██▌     ',
+    '▀██▄ ▀████▀  ██ ██ ██ ▀█████▌ █████▀ ▀█████▌ ██▌      ▀███▀  ▀█████▌ ██▌     '
+  ];
+  var LW = LOGO[0].length;
+  var SHADES = '░▒▓█';
+  var ROWS = 9, LTOP = 2;
+  var COLS = 0, grid = [], colcls = [], pre = null;
 
-  function buildAtlas() {
-    atlas = document.createElement('canvas');
-    atlas.width = CELL * GLYPHS.length;
-    atlas.height = CELL * COLORS.length;
-    var a = atlas.getContext('2d');
-    a.textAlign = 'center';
-    a.textBaseline = 'middle';
-    a.font = '700 17px Argon, monospace';
-    for (var c = 0; c < COLORS.length; c++) {
-      a.fillStyle = COLORS[c];
-      for (var g = 0; g < GLYPHS.length; g++) {
-        a.fillText(GLYPHS[g], g * CELL + CELL / 2, c * CELL + CELL / 2 + 1);
+  function rnd(n) { return Math.floor(Math.random() * n); }
+
+  function build() {
+    var w = banner.clientWidth;
+    banner.textContent = '';
+    pre = document.createElement('pre');
+    pre.className = 'bn';
+    pre.setAttribute('aria-hidden', 'true');
+    /* measure glyph width with a span — the pre is a block and
+       reports the container width, not the text run */
+    var meas = document.createElement('span');
+    meas.textContent = '████████████████████';
+    pre.appendChild(meas);
+    banner.appendChild(pre);
+    var chw = meas.getBoundingClientRect().width / 20 || 7;
+    /* shrink the type until the whole logo fits the viewport */
+    var fs = Math.min(12, 12 * w / ((LW + 4) * chw));
+    if (fs < 12) {
+      pre.style.fontSize = fs + 'px';
+      chw = meas.getBoundingClientRect().width / 20 || 5;
+    }
+    pre.textContent = '';
+    COLS = Math.max(LW, Math.floor(w / chw));
+    var lofs = Math.max(0, Math.floor((COLS - LW) / 2));
+
+    /* column heights: a smoothed walk.  Behind the logo the curtain
+       thickens into a solid slab so the carved letters cut cleanly. */
+    var h = [], slab = [], cur = 5;
+    colcls = [];
+    for (var c = 0; c < COLS; c++) {
+      cur += rnd(3) - 1;
+      cur = Math.max(2, Math.min(ROWS, cur));
+      slab.push(c >= lofs - 2 && c < lofs + LW + 2);
+      h.push(slab[c] ? Math.max(cur, LTOP + 5) : cur);
+      colcls.push(slab[c] ? 'g3'
+                  : rnd(40) === 0 ? (rnd(2) ? 'ap' : 'ac')
+                  : 'g' + (2 + rnd(2)));
+    }
+
+    grid = [];
+    for (var r = 0; r < ROWS; r++) {
+      grid.push([]);
+      for (var c2 = 0; c2 < COLS; c2++) {
+        var sp = document.createElement('span');
+        var lch = ' ';
+        if (r >= LTOP && r < LTOP + 4 && c2 >= lofs && c2 < lofs + LW) {
+          lch = LOGO[r - LTOP].charAt(c2 - lofs) || ' ';
+        }
+        if (r < h[c2]) {
+          if (lch !== ' ') {
+            sp.className = 'cv';
+            sp.textContent = lch;
+          } else {
+            var edge = h[c2] - 1 - r;    /* 0 at the ragged bottom */
+            sp.className = colcls[c2];
+            sp.textContent =
+              (slab[c2] && r >= LTOP - 1 && r < LTOP + 5) ? '█'
+              : edge === 0 ? (rnd(2) ? '░' : '▒')
+              : edge === 1 ? (rnd(2) ? '▒' : '▓')
+              : (rnd(3) ? '█' : '▓');
+          }
+        } else {
+          sp.textContent = ' ';
+        }
+        pre.appendChild(sp);
+        grid[r].push(sp);
       }
+      pre.appendChild(document.createTextNode('\n'));
     }
   }
 
-  function wordPoints() {
-    var off = document.createElement('canvas');
-    off.width = W; off.height = H;
-    var o = off.getContext('2d');
-    var size = H * 0.86;
-    o.font = '700 ' + size + 'px Argon, monospace';
-    var tw = o.measureText(WORD).width;
-    if (tw > W * 0.94) {
-      size *= (W * 0.94) / tw;
-      o.font = '700 ' + size + 'px Argon, monospace';
-    }
-    o.textAlign = 'center';
-    o.textBaseline = 'middle';
-    o.fillStyle = '#fff';
-    o.fillText(WORD, W / 2, H * 0.54);
-    var data = o.getImageData(0, 0, W, H).data;
-    var pts = [];
-    var stride = 3;
-    for (var y = 0; y < H; y += stride) {
-      for (var x = 0; x < W; x += stride) {
-        if (data[(y * W + x) * 4 + 3] > 128) pts.push([x, y]);
-      }
-    }
-    return pts;
+  var lit = [];
+  function unlight() {
+    for (var i = 0; i < lit.length; i++) lit[i].classList.remove('lit');
+    lit = [];
   }
-
-  function makeParts() {
-    var pts = wordPoints();
-    var budget = Math.min(900, pts.length);
-    var step = pts.length / budget;
-    parts = [];
-    for (var i = 0; i < budget; i++) {
-      var pt = pts[Math.floor(i * step)];
-      parts.push({
-        hx: pt[0], hy: pt[1],
-        g: Math.floor(Math.random() * GLYPHS.length),
-        c: Math.random() < 0.85 ? Math.floor(Math.random() * 2)
-                                : 2 + Math.floor(Math.random() * 4),
-        s: 5 + Math.random() * 5,
-        scr: 0
-      });
-    }
-  }
-
-  function size() {
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = banner.clientWidth;
-    H = banner.clientHeight;
-    banner.width = W * DPR;
-    banner.height = H * DPR;
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  }
-
-  var R = 64, R2 = R * R;
-
-  /* idle life: every few seconds a scramble wave sweeps through the
-     word, and lone glyphs sparkle now and then, so the banner never
-     sits perfectly still. */
-  var WAVE_MS = 1400, WAVE_W = 30;
-  var waveT0 = -1, waveNext = 2600;
-
-  function draw(ts) {
-    ctx.clearRect(0, 0, W, H);
-
-    var wx = -1;
-    if (ts >= waveNext) {
-      waveT0 = ts;
-      waveNext = ts + 6000 + Math.random() * 8000;
-    }
-    if (waveT0 >= 0) {
-      var wt = (ts - waveT0) / WAVE_MS;
-      if (wt >= 1) waveT0 = -1;
-      else wx = -WAVE_W + (W + 2 * WAVE_W) * wt;
-    }
-
-    if (Math.random() < 0.02) {
-      var lone = parts[(Math.random() * parts.length) | 0];
-      if (lone) lone.scr = Math.max(lone.scr, 0.3 + Math.random() * 0.3);
-    }
-
-    for (var i = 0; i < parts.length; i++) {
-      var p = parts[i];
-      var dx = p.hx - mx, dy = p.hy - my;
-      p.scr *= 0.94;
-      if (dx * dx + dy * dy < R2) p.scr = 1;
-      else if (wx >= 0) {
-        var wd = Math.abs(p.hx - wx);
-        if (wd < WAVE_W) p.scr = Math.max(p.scr, 0.85 * (1 - wd / WAVE_W));
+  function light(cx, cy) {
+    unlight();
+    for (var r = Math.max(0, cy - 2); r < Math.min(ROWS, cy + 3); r++) {
+      for (var c = Math.max(0, cx - 5); c < Math.min(COLS, cx + 6); c++) {
+        var dx = (c - cx) * 0.5, dy = r - cy;
+        if (dx * dx + dy * dy < 6.5) {
+          var sp = grid[r][c];
+          if (sp.textContent !== ' ') { sp.classList.add('lit'); lit.push(sp); }
+        }
       }
-
-      var g = p.g, c = p.c, jx = 0, jy = 0;
-      if (p.scr > 0.05 && Math.random() < p.scr) {
-        g = Math.floor(Math.random() * GLYPHS.length);
-        c = 2 + Math.floor(Math.random() * 4);
-        jx = (Math.random() - 0.5) * 2.2 * p.scr;
-        jy = (Math.random() - 0.5) * 2.2 * p.scr;
-      }
-      ctx.drawImage(atlas, g * CELL, c * CELL, CELL, CELL,
-        p.hx - p.s / 2 + jx, p.hy - p.s / 2 + jy, p.s, p.s);
     }
   }
 
   function init() {
-    size();
-    buildAtlas();
-    makeParts();
-    draw(0);
+    build();
     if (REDUCED) return;
 
     banner.addEventListener('pointermove', function (e) {
-      var r = banner.getBoundingClientRect();
-      mx = e.clientX - r.left;
-      my = e.clientY - r.top;
+      var rect = pre.getBoundingClientRect();
+      light(Math.floor((e.clientX - rect.left) / (rect.width / COLS)),
+            Math.floor((e.clientY - rect.top) / (rect.height / ROWS)));
     });
-    banner.addEventListener('pointerleave', function () {
-      mx = -9999; my = -9999;
-    });
-    document.addEventListener('visibilitychange', function () {
-      running = !document.hidden;
-    });
+    banner.addEventListener('pointerleave', unlight);
 
-    (function loop(ts) {
-      if (running) draw(ts || 0);
-      requestAnimationFrame(loop);
-    })(0);
+    /* idle shimmer: stray cells flicker one shade for a moment */
+    setInterval(function () {
+      if (document.hidden) return;
+      for (var k = 0; k < 2; k++) {
+        var sp = grid[rnd(ROWS)][rnd(COLS)];
+        if (!sp || sp.className === 'cv' || sp.textContent === ' ') continue;
+        (function (sp, old) {
+          sp.textContent = SHADES[rnd(4)];
+          setTimeout(function () { sp.textContent = old; }, 260 + rnd(500));
+        })(sp, sp.textContent);
+      }
+    }, 140);
 
     var rt;
     window.addEventListener('resize', function () {
       clearTimeout(rt);
-      rt = setTimeout(function () { size(); makeParts(); }, 200);
+      rt = setTimeout(build, 200);
     });
   }
 
+  /* build immediately so the curtain is the first paint, then rebuild
+     once the real font is in and the glyph metrics are true */
+  init();
   if (document.fonts && document.fonts.load) {
-    document.fonts.load('700 100px Argon').then(init, init);
-  } else {
-    init();
+    document.fonts.load('12px Argon').then(function () { build(); }, function () {});
   }
 })();

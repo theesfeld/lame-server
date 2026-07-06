@@ -1,7 +1,8 @@
 # lameserver.net
 
-A personal board in the ANSI/BBS tradition — Renegade menus, Phrack-style
-philes, ACiD-flavored art — rendered in Dracula colors with modern glow.
+A personal board in the ANSI/BBS tradition — Renegade menus, philes laid
+out like ACiD newsletters, titles set in lameblock (the site's own
+hand-drawn block font) — rendered in Dracula colors with modern glow.
 Written in org-mode, built by a single Emacs Lisp file, served as static
 HTML from `docs/` via GitHub Pages.
 
@@ -37,5 +38,5 @@ Drag/drop images into org buffers via org-download → `org/media/`.
 
 Monaspace Argon (body), Px437 IBM VGA 8x16 from the Ultimate Oldschool PC
 Font Pack (CC BY-SA 4.0, int10h.org), GNU FreeMono (braille glyphs),
-TeX Gyre Pagella (splash). Palette: Dracula. Tools: chafa, figlet, gpg,
+TeX Gyre Pagella (splash). Palette: Dracula. Tools: chafa, gpg,
 htmlize.
