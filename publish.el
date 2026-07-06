@@ -237,7 +237,7 @@ one is picked deterministically per phile.")
     (?d "  ▄▄▄██" "▄██▀▀██" "██▌ ▐██" "▀██████")
     (?e "▄████▄ " "██▄▄▄██" "██▌▀▀▀▀" "▀█████▌")
     (?f " ▄███▄" "▐█▌▀▀ " "████  " "▐█▌   ")
-    (?g "▄█████▌" "██▌ ██▌" "▀████▌ " "▄▄▄██▌ ")
+    (?g "▄████▄" "██▄▄██" "▀▀▀▐██" "▄███▀ ")
     (?h "██▄▄▄  " "██▀▀██▄" "██  ▐██" "██  ▐██")
     (?i "▐█▌" "▄▄ " "██▌" "██▌")
     (?j "  ▐█▌" "  ▄▄ " "  ██▌" "▀██▀ ")
@@ -251,7 +251,7 @@ one is picked deterministically per phile.")
     (?r "▄█▄███▄" "███▀▀▀ " "██▌    " "██▌    ")
     (?s "▄████▄" "██▄▄▄ " "▀▀▀██▌" "█████▀")
     (?t " ▄█▄  " "▀███▀ " " ██▌  " " ▀██▄ ")
-    (?u "██  ██ " "██  ██ " "██▄▄██▄" "▀██▀▐██")
+    (?u "██  ██" "██  ██" "██  ██" "▀████▀")
     (?v "██▌ ▐██" "██▌ ▐██" "▐██▄██▌" " ▀███▀ ")
     (?w "██ ██ ██" "██ ██ ██" "██▄██▄██" "▀██▀▀██▀")
     (?x "▐█▄▄█▌" " ▀██▀ " " ▄██▄ " "▐█▀▀█▌")
@@ -365,6 +365,44 @@ HUE names the accent family (nil = newsletter gray); wraps at MAX-COLS."
               width
               (string-join (nreverse out) "\n")))))
 
+;;;; ---------------------------------------------------------------- drip edge
+
+;; The file_id.diz melt: a solid mass along the top that drips down into
+;; ░▒▓ hangers of clustered, irregular length.  Wider than any viewport so
+;; it clips at the box edge.  Rendered as one <pre>; four rows.
+
+(defconst lameserver--drip-cols 220 "Drip width in cells; clips to the box.")
+
+(defun lameserver--drip (&optional seed-string)
+  "A drip edge <pre>, its hangers seeded deterministically from SEED-STRING."
+  (let* ((cols lameserver--drip-cols)
+         (seed (or seed-string "drip"))
+         (state (string-to-number (substring (secure-hash 'sha1 seed) 0 8) 16))
+         (heights (make-vector cols 0))
+         (cur 1)
+         (rows '()))
+    (when (zerop state) (setq state 305419896))
+    ;; a smoothed random walk of hanger lengths (0..3), with occasional
+    ;; long single drips for that hand-drawn irregularity
+    (dotimes (c cols)
+      (setq state (lameserver--xorshift state))
+      (setq cur (max 0 (min 3 (+ cur (- (mod state 3) 1)))))
+      (when (zerop (mod state 17)) (setq cur 3))
+      (aset heights c cur))
+    ;; row 0 is the solid mass; rows 1..3 are the fading hangers
+    (dotimes (r 4)
+      (let ((line (make-string cols ?\s t)))    ; multibyte: cells are blocks
+        (dotimes (c cols)
+          (let ((h (aref heights c)))
+            (aset line c
+                  (cond ((= r 0) ?█)
+                        ((< r h) (aref "·▓▒░" r))     ; mid-hanger
+                        ((= r h) (aref "·░░·" r))     ; the tip
+                        (t ?\s)))))
+        (push (lameserver--escape line) rows)))
+    (format "<pre class=\"drip\" aria-hidden=\"true\">%s</pre>"
+            (string-join (nreverse rows) "\n"))))
+
 ;;;; ---------------------------------------------------------------- phile head
 
 (defun lameserver--issue-bar (entry)
@@ -398,24 +436,32 @@ HUE names the accent family (nil = newsletter gray); wraps at MAX-COLS."
         (desc (plist-get entry :description)))
     (concat
      (format "<header class=\"phile-head hue-%s\">" (lameserver--hue entry))
+     (format "<h1 class=\"vh\">%s</h1>" (lameserver--escape title))
+     (lameserver--block-logo title (lameserver--hue entry))
      (if (string-blank-p (or desc ""))
          ""
        (format "<div class=\"pre-quote\">&#8216;%s&#8217;</div>"
                (lameserver--escape desc)))
-     (format "<h1 class=\"vh\">%s</h1>" (lameserver--escape title))
-     (lameserver--block-logo title (lameserver--hue entry))
      (lameserver--issue-bar entry)
+     (format "<div class=\"sec-drip\">%s</div>" (lameserver--drip title))
      "</header>")))
 
+(defvar lameserver--section-index 0
+  "Counts level-1 sections within one phile, to alternate logo side.")
+
 (defun lameserver--html-headline (headline contents info)
-  "Top-level org sections open with their name drawn in lameblock,
-newsletter-gray; the real heading beneath it becomes a thin rule."
+  "Top-level org sections open with their name drawn big in lameblock,
+floated to alternating sides so the body text wraps around it — no box,
+newsletter style."
   (let ((out (org-html-headline headline contents info)))
     (if (/= 1 (org-element-property :level headline))
         out
-      (let ((raw (replace-regexp-in-string
-                  "[*/=~+_]" "" (or (org-element-property :raw-value headline) ""))))
-        (concat (lameserver--block-logo raw nil 56) out)))))
+      (let* ((raw (replace-regexp-in-string
+                   "[*/=~+_]" "" (or (org-element-property :raw-value headline) "")))
+             (side (if (cl-oddp (cl-incf lameserver--section-index)) "left" "right"))
+             (logo (lameserver--block-logo raw nil 30)))
+        (format "<section class=\"phile-sec float-%s\">%s%s</section>"
+                side logo out)))))
 
 ;;;; ---------------------------------------------------------------- ANSI art
 
@@ -851,7 +897,8 @@ nothing but text ships."
 (defun lameserver--export-file (file outfile)
   "Export org FILE to OUTFILE through the lameserver backend."
   (make-directory (file-name-directory outfile) t)
-  (let ((visiting (find-buffer-visiting file)))
+  (let ((visiting (find-buffer-visiting file))
+        (lameserver--section-index 0))     ; alternation restarts each phile
     (with-current-buffer (or visiting (find-file-noselect file))
       (unwind-protect
           (org-export-to-file 'lameserver-html outfile

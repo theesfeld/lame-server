@@ -223,13 +223,70 @@ main {
 .menu a:hover .hot, .menu a.active .hot { color: var(--bg); }
 .menu a:not(:hover) .hot { text-shadow: 0 0 8px rgba(255, 121, 198, 0.7); }
 
-/* ---------------- phile head: the newsletter masthead ---------------- */
+/* ---------------- the phile-head diz box ---------------- */
+
+/* the masthead is a framed file: a thin box in the piece's hue, its
+   title set in lameblock straddling the top edge, the bottom melting
+   into a file_id.diz drip. */
+.phile-head {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--hue) 40%, var(--line));
+  border-bottom: none;
+  padding: 0 1.8ch;
+  margin: 3.6rem 0 2.6rem;
+}
+/* the block title, pulled up so it sits astride the top border;
+   its own bg masks the border line it crosses */
+.phile-head > .lb {
+  width: max-content;
+  max-width: calc(100% - 2ch);
+  margin: -2.5rem auto 0.7rem;
+  padding: 0.1rem 1.4ch;
+  background: var(--bg);
+}
+
+/* the drip edge: solid mass along the top melting into faded hangers.
+   one hue-dimmed color; the █▓▒░ density carries the fade. */
+.drip {
+  font-family: 'Argon', monospace;
+  font-size: 12px;
+  line-height: 0.9;
+  white-space: pre;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--hue, var(--comment)) 38%, var(--line));
+}
+.sec-drip {
+  margin: 0.5rem -1.8ch 0;
+  border-inline: 1px solid color-mix(in srgb, var(--hue) 40%, var(--line));
+  overflow: hidden;
+}
+
+/* ---------------- sections: floated headers, text flows around ---------------- */
+
+/* no box — each level-1 section's block title floats to an alternating
+   side and the body wraps around it with a couple chars of air. the
+   section is a BFC so its float never bleeds into the next one. */
+.phile-sec { overflow: hidden; margin: 2.6rem 0 1.4rem; }
+.phile-sec > .lb {
+  font-size: 10px;
+  margin: 0.4rem 0 0.5rem;
+  max-width: 60%;
+}
+.phile-sec.float-left > .lb  { float: left;  margin-right: 2.5ch; }
+.phile-sec.float-right > .lb { float: right; margin-left: 2.5ch; }
+/* real heading kept for a11y + anchors; block logo is the visible title */
+.phile-sec .outline-2 > h2 {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.phile-sec .outline-2, .phile-sec .outline-text-2 { margin: 0; }
 
 .pre-quote {
   text-align: center;
   color: var(--comment);
-  font-size: 0.85rem;
-  margin-top: 1.6rem;
+  font-style: italic;
+  font-size: 0.88rem;
+  margin: 0.2rem 0 0.9rem;
 }
 
 /* ▌ phile 0xNN │ an official lameserver public transmission │ date ▐ */
@@ -239,7 +296,6 @@ main {
   gap: 1ch;
   border-block: 1px solid var(--line);
   padding: 0.2rem 1ch;
-  margin-top: 1rem;
   font-size: 0.88rem;
   color: #b6bac9;
 }
@@ -259,7 +315,7 @@ main {
   text-align: right;
   color: var(--comment);
   font-size: 0.8rem;
-  margin: 0.35rem 0 2.2rem;
+  margin: 0.35rem 0 0.4rem;
 }
 
 .tag { color: var(--orange); }
@@ -269,32 +325,21 @@ main {
 .sig.ok:hover { background: var(--green); color: var(--bg); }
 .sig.none { color: var(--red); }
 
-/* Section headings, newsletter style: level-1 sections open with the
-   heading drawn big in lameblock (injected at export); the real hN
-   beneath it is a quiet dashed rule with the lowercase name — the
-   infofile idiom.  Deeper levels are letter-spaced whispers. */
-.phile-body h2, .phile-body h3, .phile-body h4, .phile-body h5 {
+/* sub-headings inside a section: letter-spaced whispers, infofile style */
+.phile-body h3, .phile-body h4, .phile-body h5 {
   font-weight: 400;
-  margin: 2.2rem 0 0.8rem;
+  margin: 2rem 0 0.7rem;
   cursor: pointer;
   text-transform: lowercase;
 }
-.phile-body .lb { margin-top: 3rem; margin-bottom: 0; }
-.phile-body h2 {
-  font-size: 0.85rem;
-  color: var(--comment);
-  border-block: 1px dashed var(--line);
-  padding: 0.12rem 1ch;
-}
-.phile-body .lb + div > h2 { margin-top: 0.5rem; }
 .phile-body h3 {
   color: #b6bac9;
   font-size: 0.95rem;
-  letter-spacing: 0.45em;
+  letter-spacing: 0.4em;
   border-bottom: 1px dashed var(--line);
   padding-bottom: 0.2rem;
 }
-.phile-body h4 { color: var(--comment); font-size: 0.9rem; letter-spacing: 0.3em; }
+.phile-body h4 { color: var(--comment); font-size: 0.9rem; letter-spacing: 0.28em; }
 .phile-body h5 { color: var(--comment); font-size: 0.85rem; }
 .phile-body h5::before { content: '» '; }
 
@@ -338,7 +383,8 @@ main {
   padding: 0 0.5ch;
 }
 
-.phile-body pre {
+/* code blocks only — not the decorative pres (lameblock, drip, ansi) */
+.phile-body pre:not(.lb):not(.drip):not(.ansi-art) {
   background: var(--bg-deep);
   border: 1px solid var(--line);
   padding: 0.9rem 1.1rem;
@@ -685,6 +731,14 @@ main {
   .masthead { font-size: 0.8rem; }
   .issue .i-mid { display: none; }
   .phile-body p { text-indent: 3ch; }
+  /* too narrow to wrap around a float — center the logo above the text */
+  .phile-sec > .lb {
+    float: none !important;
+    margin: 0.4rem auto 0.6rem !important;
+    max-width: 100%;
+    font-size: 12px;
+  }
+  .phile-body p { text-align: left; }
 }
 
 /* ---------------- reduced motion ---------------- */
