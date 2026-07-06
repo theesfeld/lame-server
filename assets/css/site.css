@@ -117,6 +117,7 @@ main {
   margin-top: 0.2rem;
 }
 .masthead .rail { color: var(--comment); text-shadow: none; }
+.masthead .cap { color: var(--pink); text-shadow: none; opacity: 0.75; }
 .masthead .rail-fill {
   flex: 1;
   overflow: hidden;
@@ -131,10 +132,31 @@ main {
 .menu {
   display: flex;
   flex-wrap: wrap;
+  align-items: baseline;
   gap: 0.25rem 1.4ch;
   padding: 0.35rem 0 0.55rem;
   border-bottom: 1px solid var(--line);
   font-size: 0.95rem;
+}
+/* the BBS "current area" field, right-aligned in the menu bar */
+.menu-loc {
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--yellow);
+  text-shadow: 0 0 8px rgba(241, 250, 140, 0.35);
+}
+.menu-loc .rail { color: var(--comment); text-shadow: none; }
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .menu a { color: var(--fg); padding: 0 0.4ch; }
 .menu a .hot { color: var(--pink); font-weight: 700;
@@ -179,11 +201,16 @@ main {
   font-size: 1.7rem;
 }
 
+/* status-strip under the title, like a file_id.diz info bar */
 .phile-meta {
   color: var(--comment);
   margin-bottom: 1.8rem;
   font-size: 0.9rem;
+  padding: 0.25rem 1ch;
+  border-block: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(68, 71, 90, 0.4), transparent 75%);
 }
+.phile-meta .cap { color: var(--pink); opacity: 0.7; }
 
 .tag { color: var(--orange); }
 .tag:hover { background: var(--orange); color: var(--bg); }
@@ -192,23 +219,42 @@ main {
 .sig.ok:hover { background: var(--green); color: var(--bg); }
 .sig.none { color: var(--red); }
 
-/* Phrack-style numbered section headings.
+/* ACiD-style numbered section headings: a heavy block cluster leads the
+   text, and h2s sit on a shelf that dissolves into dust to the right.
    ox-html emits <span class="section-number-N">…</span> inside each hN. */
 .phile-body h2, .phile-body h3, .phile-body h4, .phile-body h5 {
   font-weight: 400;
   margin: 2.2rem 0 0.8rem;
   cursor: pointer;
 }
-.phile-body h2 { color: var(--pink); text-shadow: var(--glow-pink); font-size: 1.15rem; }
+.phile-body h2 {
+  color: var(--pink);
+  text-shadow: var(--glow-pink);
+  font-size: 1.15rem;
+  margin-top: 2.8rem;
+  overflow: hidden;               /* clips the shelf on narrow screens */
+  background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent 60%);
+}
 .phile-body h3 { color: var(--cyan); text-shadow: var(--glow-cyan); font-size: 1.02rem; }
 .phile-body h4 { color: var(--purple); text-shadow: var(--glow-purple); font-size: 1rem; }
 .phile-body h5 { color: var(--green); font-size: 0.95rem; }
 
-.phile-body h2::before { content: '--[ '; color: var(--comment); text-shadow: none; }
-.phile-body h2::after  { content: ' ]--------'; color: var(--comment); text-shadow: none; }
-.phile-body h3::before { content: '----[ '; color: var(--comment); text-shadow: none; }
-.phile-body h3::after  { content: ' ]'; color: var(--comment); text-shadow: none; }
-.phile-body h4::before { content: '------[ '; color: var(--comment); text-shadow: none; }
+.phile-body h2::before { content: '█▓▒░ '; text-shadow: none; opacity: 0.8; }
+.phile-body h2::after {
+  content: '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▓▓▓▒▒▒░░░ ░ ░  ·∙ .';
+  display: block;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 0.85em;
+  background: linear-gradient(90deg, var(--pink), var(--purple) 45%, transparent 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+}
+.phile-body h3::before { content: '▓▒░ '; text-shadow: none; opacity: 0.8; }
+.phile-body h3::after  { content: ' ░▒▒░· ∙ .'; text-shadow: none; opacity: 0.55; }
+.phile-body h4::before { content: '▒░ '; text-shadow: none; opacity: 0.8; }
 .phile-body h5::before { content: '» '; color: var(--comment); }
 
 .phile-body .section-number-2, .phile-body .section-number-3,
@@ -229,7 +275,9 @@ main {
 .phile-body li { margin-bottom: 0.2rem; }
 
 .phile-body blockquote {
-  border-left: 3px solid var(--purple);
+  border-left: 3px solid;
+  border-image: linear-gradient(180deg, var(--purple), rgba(189, 147, 249, 0.1)) 1;
+  background: linear-gradient(90deg, rgba(189, 147, 249, 0.07), transparent 65%);
   padding: 0.2rem 0 0.2rem 1.6ch;
   margin: 0 0 1rem;
   color: var(--comment);
@@ -271,11 +319,12 @@ main {
 
 .phile-body table {
   border-collapse: collapse;
+  border: 3px double var(--comment);
   margin: 0 0 1.2rem;
   font-size: 0.92rem;
 }
 .phile-body th, .phile-body td {
-  border: 1px solid var(--comment);
+  border: 1px solid var(--line);
   padding: 0.3rem 1ch;
 }
 .phile-body th {
@@ -287,8 +336,14 @@ main {
 
 .phile-body hr {
   border: 0;
-  border-top: 1px dashed var(--line);
-  margin: 1.6rem 0;
+  margin: 1.8rem 0;
+}
+.phile-body hr::after {
+  content: '▄▄█▓▒░ ·∙ .';
+  display: block;
+  text-align: center;
+  color: var(--comment);
+  line-height: 1;
 }
 
 /* ---------------- ANSI art ---------------- */
@@ -335,10 +390,19 @@ main {
 
 .divider {
   text-align: center;
-  color: var(--comment);
+  white-space: pre;             /* dividers can be multi-line ANSI pieces */
+  line-height: 1.15;
   margin: 2.4rem 0 1.6rem;
-  letter-spacing: 0.15em;
-  text-shadow: 0 0 10px rgba(98, 114, 164, 0.8);
+  letter-spacing: 0.1em;
+  background: linear-gradient(90deg,
+    var(--comment), var(--purple) 30%, var(--pink) 50%,
+    var(--purple) 70%, var(--comment));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgba(189, 147, 249, 0.35));
+  animation: figsweep 16s ease-in-out infinite alternate;
 }
 
 /* ---------------- board listing ---------------- */
@@ -377,10 +441,17 @@ main {
   padding: 0.45rem 0.6ch;
   border: 1px solid transparent;
 }
+/* selection is a BBS lightbar: a color wash that fades out rightward */
 .board .row-link:hover, .board .row.sel .row-link {
-  background: var(--bg-deep);
+  background: linear-gradient(90deg,
+    rgba(189, 147, 249, 0.2), rgba(255, 121, 198, 0.07) 45%,
+    rgba(33, 34, 44, 0.7));
   border-color: var(--line);
-  box-shadow: inset 2px 0 0 var(--pink), 0 0 14px rgba(255, 121, 198, 0.12);
+  box-shadow: inset 3px 0 0 var(--pink), 0 0 14px rgba(255, 121, 198, 0.12);
+}
+.board .row.sel .row-hex {
+  color: var(--yellow);
+  text-shadow: 0 0 8px rgba(241, 250, 140, 0.5);
 }
 .board .row-thumb .ansi-art {
   font-size: 6px;

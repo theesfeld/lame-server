@@ -38,7 +38,7 @@
       return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>';
     }).join('');
     helpEl.innerHTML =
-      '<div class="help-panel"><h2>--[ sysop help ]--</h2>' +
+      '<div class="help-panel"><h2>█▓▒░ sysop help ░▒▓ ·∙.</h2>' +
       '<table><tbody>' + rows + '</tbody></table>' +
       '<span class="help-close">press any key to return</span></div>';
     helpEl.addEventListener('click', function () { toggleHelp(false); });
@@ -189,13 +189,40 @@
 
   var R = 64, R2 = R * R;
 
-  function draw() {
+  /* idle life: every few seconds a scramble wave sweeps through the
+     word, and lone glyphs sparkle now and then, so the banner never
+     sits perfectly still. */
+  var WAVE_MS = 1400, WAVE_W = 30;
+  var waveT0 = -1, waveNext = 2600;
+
+  function draw(ts) {
     ctx.clearRect(0, 0, W, H);
+
+    var wx = -1;
+    if (ts >= waveNext) {
+      waveT0 = ts;
+      waveNext = ts + 6000 + Math.random() * 8000;
+    }
+    if (waveT0 >= 0) {
+      var wt = (ts - waveT0) / WAVE_MS;
+      if (wt >= 1) waveT0 = -1;
+      else wx = -WAVE_W + (W + 2 * WAVE_W) * wt;
+    }
+
+    if (Math.random() < 0.02) {
+      var lone = parts[(Math.random() * parts.length) | 0];
+      if (lone) lone.scr = Math.max(lone.scr, 0.3 + Math.random() * 0.3);
+    }
+
     for (var i = 0; i < parts.length; i++) {
       var p = parts[i];
       var dx = p.hx - mx, dy = p.hy - my;
+      p.scr *= 0.94;
       if (dx * dx + dy * dy < R2) p.scr = 1;
-      else p.scr *= 0.94;
+      else if (wx >= 0) {
+        var wd = Math.abs(p.hx - wx);
+        if (wd < WAVE_W) p.scr = Math.max(p.scr, 0.85 * (1 - wd / WAVE_W));
+      }
 
       var g = p.g, c = p.c, jx = 0, jy = 0;
       if (p.scr > 0.05 && Math.random() < p.scr) {
@@ -213,7 +240,7 @@
     size();
     buildAtlas();
     makeParts();
-    draw();
+    draw(0);
     if (REDUCED) return;
 
     banner.addEventListener('pointermove', function (e) {
@@ -228,10 +255,10 @@
       running = !document.hidden;
     });
 
-    (function loop() {
-      if (running) draw();
+    (function loop(ts) {
+      if (running) draw(ts || 0);
       requestAnimationFrame(loop);
-    })();
+    })(0);
 
     var rt;
     window.addEventListener('resize', function () {

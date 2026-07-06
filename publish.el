@@ -48,14 +48,15 @@
 (defconst lameserver--ansi-warn-bytes 300000)
 
 (defconst lameserver--dividers
-  ["═══════════ ▓▒░ ═══════════"
-   "━━━━━━━━━━━ ◆ ━━━━━━━━━━━"
-   "───────── ■ ■ ■ ─────────"
-   "▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀"
-   "░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░"
-   "══╦══════════════════╦══"
-   "·∙●∙·──────────────·∙●∙·"]
-  "Per-post divider strings; one is picked deterministically per phile.")
+  ["▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▓▓▒▒░░ ∙ ·"
+   "▀▄▄▀▀▄▄▄▀▀▀▄▄ ▄▄▄ ▄▄ ▄ ∙ ·"
+   "░▒▓██▓▒░▒▓███▓▒░ ·∙ ·\n   ▀▀▀▀▀▀▀▓▒░ ·"
+   "∙ ·░░▒▒▓▓████▓▓▒▒░░· ∙"
+   "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n ▀▓▒░  ▀▓▒░   ▀▓▒░  ·"
+   "░▒░▓█▓░▒░ ▒█▓ ░▓ ▒ ░ ·"
+   "· ∙ ░ ▒ ▓ █ ▓ ▒ ░ ∙ ·"]
+  "Per-post divider strings, artscene style (multi-line via \\n);
+one is picked deterministically per phile.")
 
 (defconst lameserver--emblem-classes
   ["dc-cyan" "dc-green" "dc-orange" "dc-pink" "dc-purple" "dc-red" "dc-yellow"]
@@ -476,7 +477,8 @@ nothing but text ships."
   '(("board" . "/board/") ("about" . "/about/") ("rss" . "/feed.xml"))
   "Site menu; the first letter of each label is its live hotkey.")
 
-(defun lameserver--menu-html (active)
+(defun lameserver--menu-html (active &optional loc)
+  "Menu bar; LOC is the BBS-style \"current area\" field, right-aligned."
   (concat
    "<nav class=\"menu\" aria-label=\"site\">"
    (mapconcat
@@ -489,13 +491,19 @@ nothing but text ships."
                 hot rest)))
     lameserver--menu " ")
    "<a href=\"/board/#search\">(<span class=\"hot\">/</span>)search</a>"
+   (when loc
+     (format (concat "<span class=\"menu-loc\" aria-hidden=\"true\">"
+                     "<span class=\"rail\">─═[ </span>%s<span class=\"rail\"> ]═─</span>")
+             (lameserver--escape loc)))
    "</nav>"))
 
 (defun lameserver--masthead (right)
   (format (concat "<div class=\"masthead\" aria-hidden=\"true\">"
+                  "<span class=\"cap\">░▒▓</span>"
                   "<span class=\"rail\">══[ </span>%s<span class=\"rail\"> ]══</span>"
                   "<span class=\"rail-fill\"></span>"
                   "<span class=\"rail\">══[ </span>%s<span class=\"rail\"> ]══</span>"
+                  "<span class=\"cap\">▓▒░</span>"
                   "</div>")
           lameserver--site-name right))
 
@@ -512,7 +520,7 @@ nothing but text ships."
 
 (defun lameserver--page-shell (&rest args)
   "Full HTML page.  ARGS plist: :title :desc :canonical :masthead-right
-:active :body :extra-head :body-script"
+:active :loc :body :extra-head :body-script"
   (let ((title (plist-get args :title))
         (desc (or (plist-get args :desc) "lameserver.net — a bulletin board"))
         (canonical (plist-get args :canonical)))
@@ -534,7 +542,7 @@ nothing but text ships."
      "<a class=\"skip\" href=\"#content\">skip to content</a>"
      "<canvas id=\"banner\" aria-label=\"lameserver\"></canvas>"
      (lameserver--masthead (or (plist-get args :masthead-right) "est. 2026"))
-     (lameserver--menu-html (plist-get args :active))
+     (lameserver--menu-html (plist-get args :active) (plist-get args :loc))
      "</header>\n"
      "<main id=\"content\">\n"
      (plist-get args :body)
@@ -592,12 +600,13 @@ nothing but text ships."
   (let* ((file (plist-get info :input-file))
          (entry (lameserver--manifest-entry file)))
     (if (null entry)
-        ;; a plain page (about etc.): lighter chrome
+        ;; a plain page (about etc.): lighter chrome, named in the menu bar
         (let ((title (org-export-data (plist-get info :title) info)))
           (lameserver--page-shell
            :title (format "%s · lameserver" title)
            :active (lameserver--slugify title)
-           :body (concat (lameserver--title-html title)
+           :loc title
+           :body (concat (format "<h1 class=\"vh\">%s</h1>" (lameserver--escape title))
                          "<article class=\"phile-body\">" contents "</article>")
            :body-script "<script src=\"/assets/js/phile.js\" defer></script>"))
       (let* ((title (plist-get entry :title))
@@ -619,9 +628,10 @@ nothing but text ships."
                                  (lameserver--phile-hex
                                   (plist-get (car (lameserver--published)) :phile)))
          :active "board"
+         :loc (format "board › %s" (plist-get entry :phile-hex))
          :body (concat
                 (lameserver--title-html title)
-                (format "<div class=\"phile-meta\">░▒▓ %s · %s · %d min read · %s</div>"
+                (format "<div class=\"phile-meta\"><span class=\"cap\">█▓▒░</span> %s · %s · %d min read · %s</div>"
                         date tags (lameserver--reading-time (plist-get entry :words))
                         (if-let* ((sig (plist-get entry :sig)))
                             (format (concat "sig: <a class=\"sig ok\" href=\"source.org.asc\" "
@@ -779,7 +789,7 @@ verify with: gpg --verify source.org.asc source.org"
 (defun lameserver--listing-page (title posts out-dir &optional lead)
   (let ((body
          (concat
-          (lameserver--title-html title)
+          (format "<h1 class=\"vh\">%s</h1>" (lameserver--escape title))
           (or lead "")
           "<div class=\"board-bar\"><label id=\"search\" class=\"search-prompt\">"
           "search&gt; <input type=\"search\" id=\"board-search\" autocomplete=\"off\" "
@@ -793,6 +803,7 @@ verify with: gpg --verify source.org.asc source.org"
       (insert (lameserver--page-shell
                :title (format "%s · lameserver" title)
                :active "board"
+               :loc title
                :masthead-right (format "%d philes on file" (length posts))
                :body body
                :body-script "<script src=\"/assets/js/board.js\" defer></script>")))))
