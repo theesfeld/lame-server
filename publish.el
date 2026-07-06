@@ -36,7 +36,7 @@
 
 (defconst lameserver--site-url "https://lameserver.net")
 (defconst lameserver--site-name "lameserver")
-(defconst lameserver--converter-version "v1"
+(defconst lameserver--converter-version "v2"
   "Bump to invalidate every cached ANSI/figlet conversion.")
 
 (defvar lameserver--gpg-key "44DF29BCAD9943D8"
@@ -311,23 +311,32 @@ deduplicated into per-image classes to keep the output small."
     (let ((css (mapconcat
                 (lambda (c)
                   (pcase-let ((`(,name . (,fg . ,bg)) c))
+                    ;; chafa params are "r;g;b" — CSS wants commas
                     (format "#%s .%s{%s%s}" id name
-                            (if fg (format "color:rgb(%s);" fg) "")
-                            (if bg (format "background:rgb(%s);" bg) ""))))
+                            (if fg (format "color:rgb(%s);"
+                                           (subst-char-in-string ?\; ?, fg))
+                              "")
+                            (if bg (format "background:rgb(%s);"
+                                           (subst-char-in-string ?\; ?, bg))
+                              ""))))
                 (nreverse order) ""))
           (body (string-trim-right (apply #'concat (nreverse out)))))
       (format "<style>%s</style><pre class=\"ansi-art %s\" id=\"%s\">%s</pre>"
               css font-class id body))))
 
 (defun lameserver--chafa (path size symbols)
-  "Run chafa on PATH; return raw ANSI string or nil."
+  "Run chafa on PATH; return raw ANSI string or nil.
+Braille gets fg-only dithered output — dot density carries the image;
+per-cell backgrounds would wash the dots out on smooth gradients."
   (when-let* ((chafa (lameserver--tool "chafa")))
-    (lameserver--run chafa
-                     "--format" "symbols"
-                     "--colors" "full"
-                     "--symbols" symbols
-                     "--size" size
-                     (expand-file-name path))))
+    (apply #'lameserver--run chafa
+           (append (list "--format" "symbols"
+                         "--colors" "full"
+                         "--symbols" symbols
+                         "--size" size)
+                   (when (string-match-p "braille" symbols)
+                     (list "--fg-only" "--dither" "diffusion"))
+                   (list (expand-file-name path))))))
 
 (defun lameserver--ansi-render (path id &optional size symbols)
   "Cached chafa+HTML conversion of image PATH.  Returns HTML or nil."

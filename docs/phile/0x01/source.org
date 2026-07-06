@@ -75,11 +75,11 @@ artists used when a JPEG was a week's download:
 
 [[file:../media/plasma.png]]
 
-And the same idea in braille dots, which packs eight subpixels into every
-character cell:
+And the same fractal in braille dots — eight dithered subpixels per
+character cell, the way the scene does line art:
 
 #+ATTR_LAMESERVER: :symbols braille
-[[file:../media/swirl.png]]
+[[file:../media/plasma.png]]
 
 * what's next
 
