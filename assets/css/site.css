@@ -129,26 +129,32 @@ main {
   content: '════════════════════════════════════════════════════════════════════════════════════════════════';
 }
 
+/* the menu is a solid status bar, Renegade-style */
 .menu {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 1.4ch;
-  padding: 0.35rem 0 0.55rem;
-  border-bottom: 1px solid var(--line);
+  margin-top: 0.3rem;
+  padding: 0.3rem 1ch 0.4rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--pink);
+  border-right: 4px solid var(--pink);
   font-size: 0.95rem;
 }
-/* the BBS "current area" field, right-aligned in the menu bar */
+/* the BBS "current area" field: an inverse-video chip on the right */
 .menu-loc {
   margin-left: auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: var(--line);
   color: var(--yellow);
-  text-shadow: 0 0 8px rgba(241, 250, 140, 0.35);
+  padding: 0 1ch;
+  text-shadow: none;
 }
-.menu-loc .rail { color: var(--comment); text-shadow: none; }
 
 .vh {
   position: absolute;
@@ -170,47 +176,38 @@ main {
 .menu a:hover .hot, .menu a.active .hot { color: var(--bg); }
 .menu a:not(:hover) .hot { text-shadow: 0 0 8px rgba(255, 121, 198, 0.7); }
 
-/* ---------------- figlet + phile headings ---------------- */
+/* ---------------- the diz card ---------------- */
 
-.figlet {
+/* LORD-style vertical fade, brightest at the top of the card */
+.dz0 { color: var(--fg); text-shadow: 0 0 10px rgba(248, 248, 242, 0.35); }
+.dz1 { color: var(--pink); text-shadow: var(--glow-pink); }
+.dz2 { color: var(--purple); text-shadow: none; }
+.dz3 { color: var(--comment); text-shadow: none; }
+
+/* Every phile opens with a FILE_ID.DIZ release card.  The --cols var
+   is the card's width in characters, set at build time, so the font
+   scales to always fit the column.  0.62 ≈ Argon glyph aspect. */
+.diz {
   font-family: 'Argon', monospace;
-  font-size: clamp(6px, 1.5vw, 13px);
+  font-size: min(13px, calc((100vw - 3rem) * 1.61 / var(--cols, 74)));
   line-height: 1.05;
-  margin: 1.6rem 0 0.4rem;
-  overflow-x: auto;
-  background: linear-gradient(100deg,
-    var(--pink) 0%, var(--purple) 25%, var(--cyan) 50%,
-    var(--purple) 75%, var(--pink) 100%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 0 10px rgba(189, 147, 249, 0.45));
-  animation: figsweep 10s ease-in-out infinite alternate;
-}
-@keyframes figsweep {
-  from { background-position: 0% 50%; }
-  to   { background-position: 100% 50%; }
-}
-
-.phile-title {
-  color: var(--pink);
-  text-shadow: var(--glow-pink);
-  letter-spacing: 0.06em;
-  margin: 1.6rem 0 0.4rem;
-  font-size: 1.7rem;
-}
-
-/* status-strip under the title, like a file_id.diz info bar */
-.phile-meta {
+  width: max-content;
+  max-width: 100%;
+  margin: 1.8rem auto 0.6rem;
   color: var(--comment);
-  margin-bottom: 1.8rem;
-  font-size: 0.9rem;
-  padding: 0.25rem 1ch;
-  border-block: 1px solid var(--line);
-  background: linear-gradient(90deg, rgba(68, 71, 90, 0.4), transparent 75%);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 121, 198, 0.07), transparent 65%),
+    var(--bg-deep);
+  overflow: hidden;
 }
-.phile-meta .cap { color: var(--pink); opacity: 0.7; }
+
+.diz-tagline {
+  text-align: center;
+  color: var(--comment);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0 0 2rem;
+}
 
 .tag { color: var(--orange); }
 .tag:hover { background: var(--orange); color: var(--bg); }
@@ -246,7 +243,11 @@ main {
   white-space: nowrap;
   line-height: 1.2;
   font-size: 0.85em;
-  background: linear-gradient(90deg, var(--pink), var(--purple) 45%, transparent 95%);
+  /* hard color steps, not a smooth fade — this is 16-color land */
+  background: linear-gradient(90deg,
+    var(--pink) 0 8ch, var(--purple) 8ch 14ch,
+    var(--cyan) 14ch 18ch, var(--purple) 18ch 22ch,
+    var(--comment) 22ch);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -394,15 +395,17 @@ main {
   line-height: 1.15;
   margin: 2.4rem 0 1.6rem;
   letter-spacing: 0.1em;
-  background: linear-gradient(90deg,
-    var(--comment), var(--purple) 30%, var(--pink) 50%,
-    var(--purple) 70%, var(--comment));
-  background-size: 200% 100%;
+  /* stepped color bands marching in 3ch jumps: ANSI color cycling */
+  background: repeating-linear-gradient(90deg,
+    var(--pink) 0 3ch, var(--purple) 3ch 6ch, var(--cyan) 6ch 9ch);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 8px rgba(189, 147, 249, 0.35));
-  animation: figsweep 16s ease-in-out infinite alternate;
+  animation: march 1.8s steps(3) infinite;
+}
+@keyframes march {
+  to { background-position-x: 9ch; }
 }
 
 /* ---------------- board listing ---------------- */
@@ -432,41 +435,90 @@ main {
 .board-hint { color: var(--comment); font-size: 0.8rem; margin-left: auto; }
 #filter-state { color: var(--orange); font-size: 0.85rem; }
 
-.board { list-style: none; }
-.board .row { margin-bottom: 0.9rem; }
-.board .row-link {
+/* the board is a pack view: each phile is a FILE_ID.DIZ card —
+   block rules top and bottom, thumb as the logo, title as the
+   release name.  Selection lights the whole card. */
+.board {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36ch, 1fr));
+  gap: 1.4rem 1.8ch;
+}
+.board .row {
+  position: relative;
   display: flex;
-  gap: 1.6ch;
-  color: var(--fg);
-  padding: 0.45rem 0.6ch;
-  border: 1px solid transparent;
+  flex-direction: column;
+  background: var(--bg-deep);
+  border-inline: 3px solid var(--line);
+  padding: 0 1.2ch;
 }
-/* selection is a BBS lightbar: a color wash that fades out rightward */
-.board .row-link:hover, .board .row.sel .row-link {
+.board .card-top, .board .card-bot {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1;
+  font-size: 13px;
+  margin-inline: -1.2ch;
   background: linear-gradient(90deg,
-    rgba(189, 147, 249, 0.2), rgba(255, 121, 198, 0.07) 45%,
-    rgba(33, 34, 44, 0.7));
-  border-color: var(--line);
-  box-shadow: inset 3px 0 0 var(--pink), 0 0 14px rgba(255, 121, 198, 0.12);
+    var(--pink) 0 6ch, var(--purple) 6ch 12ch,
+    var(--comment) 12ch 20ch, var(--line) 20ch);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.board .row.sel .row-hex {
-  color: var(--yellow);
-  text-shadow: 0 0 8px rgba(241, 250, 140, 0.5);
+.board .card-bot { margin-top: auto; }
+.board .row-thumb {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0 0.35rem;
 }
 .board .row-thumb .ansi-art {
   font-size: 6px;
   background: none;
   overflow: hidden;
 }
-.board .row-main { flex: 1; min-width: 0; }
-.board .row-head { display: flex; align-items: baseline; gap: 1ch; }
+.board .row-head { text-align: center; margin-bottom: 0.3rem; }
+.board .row-link { color: var(--fg); }
+.board .row-link:hover { background: none; box-shadow: none; }
+/* the whole card is the click target */
+.board .row-link::after { content: ''; position: absolute; inset: 0; }
 .board .row-hex { color: var(--purple); }
-.board .row-title { color: var(--cyan); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.board .row-link:hover .row-title, .board .row.sel .row-title { color: var(--pink); }
-.board .row-dots { flex: 1; min-width: 3ch; border-bottom: 2px dotted var(--line); transform: translateY(-0.3em); }
-.board .row-date { color: var(--comment); }
-.board .row-desc { display: block; color: var(--comment); font-size: 0.88rem; margin-top: 0.15rem; }
-.board .row-tags { display: block; font-size: 0.85rem; padding-left: 0.6ch; margin-top: 0.1rem; }
+.board .row-title { color: var(--cyan); }
+.board .row-desc {
+  display: block;
+  text-align: center;
+  color: var(--comment);
+  font-size: 0.88rem;
+  margin-bottom: 0.5rem;
+}
+.board .row-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.2rem 2ch;
+  color: var(--comment);
+  font-size: 0.85rem;
+  padding-bottom: 0.45rem;
+}
+.board .row-tags .tag { position: relative; z-index: 1; }
+.board .row:hover, .board .row.sel {
+  border-color: var(--pink);
+  background: linear-gradient(180deg,
+    rgba(255, 121, 198, 0.09), var(--bg-deep) 55%);
+  box-shadow: 0 0 20px rgba(255, 121, 198, 0.16);
+}
+.board .row:hover .card-top, .board .row.sel .card-top,
+.board .row:hover .card-bot, .board .row.sel .card-bot {
+  background: repeating-linear-gradient(90deg,
+    var(--pink) 0 4ch, var(--purple) 4ch 8ch);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.board .row:hover .row-hex, .board .row.sel .row-hex {
+  color: var(--yellow);
+  text-shadow: 0 0 8px rgba(241, 250, 140, 0.5);
+}
+.board .row:hover .row-title, .board .row.sel .row-title { color: var(--pink); }
 
 /* ---------------- share + rails ---------------- */
 
@@ -539,6 +591,22 @@ main {
 .site-footer a:hover { background: var(--purple); color: var(--bg); }
 .foot-fine { margin-top: 0.3rem; font-size: 0.75rem; }
 
+/* node status: inverse-video chips, the one BBS status bar that counts */
+.foot-node {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.2ch;
+  margin: 0.5rem 0 0.7rem;
+  font-size: 0.78rem;
+}
+.foot-node .chip {
+  background: var(--comment);
+  color: var(--bg);
+  padding: 0 1ch;
+}
+.foot-node .chip-ok { background: var(--green); }
+
 /* ---------------- help overlay (injected by JS) ---------------- */
 
 .help-overlay {
@@ -571,9 +639,7 @@ main {
 @media (max-width: 640px) {
   body { font-size: 14px; }
   #banner { height: 72px; }
-  .board .row-thumb { display: none; }
-  .board .row-head { flex-wrap: wrap; }
-  .board .row-dots { display: none; }
+  .board { grid-template-columns: 1fr; }
   .board-hint { display: none; }
   .masthead { font-size: 0.8rem; }
 }
