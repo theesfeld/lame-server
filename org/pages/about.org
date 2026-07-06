@@ -1,13 +1,10 @@
 #+TITLE: about
 
-lameserver.net is one person's board: philes about unix, emacs, nix, and
-whatever else survives the draft folder. Written in org-mode, built by a
-single elisp file, styled after the ANSI scene, signed with GPG.
+This is a personal blog. Expect whatever survives the draft folder — which
+is sometimes computers, sometimes not. No schedule, no niche, no promises.
 
-- the sysop goes by *grim* · =grim@samhain.su=
-- every phile ships its org source and a detached signature
-- the public key lives at [[https://lameserver.net/pubkey.asc][/pubkey.asc]]
-- the whole site is one repo: [[https://github.com/theesfeld/lame-server][github.com/theesfeld/lame-server]]
+I'm TJ. The board answers at [[mailto:tj@lameserver.net][tj@lameserver.net]] — mail is the comment
+section. If you'd rather verify than trust, every phile ships a signature
+and the key lives at [[https://lameserver.net/pubkey.asc][/pubkey.asc]].
 
-No comments, no analytics, no javascript required to read. If you want to
-reply to a phile, write something better on your own board and sign it.
+Nothing here is tracked, monetized, or optimized. It's just written.

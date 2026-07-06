@@ -82,6 +82,24 @@
     }
   });
 
+  /* ---------------- the footer rail hangs up ---------------- */
+
+  var rail = document.querySelector('.foot-rail');
+  if (rail) {
+    rail.addEventListener('click', function () {
+      if (rail.dataset.busy) return;
+      rail.dataset.busy = '1';
+      var art = rail.textContent;
+      rail.classList.add('carrier');
+      rail.textContent = '+++ATH0 ... NO CARRIER';
+      setTimeout(function () {
+        rail.classList.remove('carrier');
+        rail.textContent = art;
+        delete rail.dataset.busy;
+      }, 1800);
+    });
+  }
+
   /* ---------------- the banner ---------------- */
 
   var banner = document.getElementById('banner');

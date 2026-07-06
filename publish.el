@@ -499,7 +499,8 @@ nothing but text ships."
 
 (defun lameserver--footer ()
   (format (concat "<footer class=\"site-footer\">"
-                  "<div class=\"foot-rail\">▓▒░</div>"
+                  "<button class=\"foot-rail\" type=\"button\" aria-label=\"hang up\">"
+                  "░▒▓█▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒░</button>"
                   "<p><a href=\"%s\">lameserver.net</a> · last updated %s</p>"
                   "<p class=\"foot-fine\">org-mode → elisp → ANSI · no trackers, no frameworks · "
                   "type set in Monaspace Argon, Px437 IBM VGA (CC BY-SA 4.0 int10h.org), GNU FreeMono</p>"
