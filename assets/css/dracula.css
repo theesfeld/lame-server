@@ -1,0 +1,40 @@
+/* Dracula classes for org/htmlize output and procedural emblems.
+   htmlize (output-type 'css, prefix "org-") maps font-lock faces to these
+   class names — colors are pinned here so builds are theme-independent. */
+
+/* --- code block faces --- */
+.org-keyword            { color: #ff79c6; }
+.org-builtin            { color: #bd93f9; }
+.org-function-name      { color: #50fa7b; }
+.org-variable-name      { color: #ffb86c; }
+.org-string             { color: #f1fa8c; }
+.org-doc                { color: #f1fa8c; font-style: italic; }
+.org-comment            { color: #6272a4; font-style: italic; }
+.org-comment-delimiter  { color: #6272a4; }
+.org-type               { color: #8be9fd; font-style: italic; }
+.org-constant           { color: #bd93f9; }
+.org-preprocessor       { color: #ff79c6; }
+.org-negation-char      { color: #ff5555; }
+.org-warning            { color: #ff5555; font-weight: bold; }
+.org-regexp-grouping-backslash { color: #ffb86c; }
+.org-regexp-grouping-construct { color: #ffb86c; }
+
+/* shell / misc modes htmlize sometimes emits */
+.org-sh-heredoc         { color: #f1fa8c; }
+.org-sh-quoted-exec     { color: #50fa7b; }
+.org-property-value     { color: #ffb86c; }
+.org-underline          { text-decoration: underline; }
+.org-bold               { font-weight: bold; }
+.org-italic             { font-style: italic; }
+
+/* org example/fixed-width blocks */
+.phile-body pre.example { color: #6272a4; }
+
+/* --- emblem + inline ANSI color classes --- */
+.dc-cyan   { color: #8be9fd; }
+.dc-green  { color: #50fa7b; }
+.dc-orange { color: #ffb86c; }
+.dc-pink   { color: #ff79c6; }
+.dc-purple { color: #bd93f9; }
+.dc-red    { color: #ff5555; }
+.dc-yellow { color: #f1fa8c; }

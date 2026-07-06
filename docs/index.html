@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lame server</title>
+<style>
+@font-face{font-family:'Pagella';font-style:normal;font-weight:700;font-display:block;src:url('/assets/fonts/pagella-bold.woff2') format('woff2')}
+
+@font-face {
+  font-family: 'VGA437';
+  src: url('/assets/fonts/vga437.woff2') format('woff2');
+  font-display: swap;
+}
+
+:root {
+  --bg: #282a36;
+  --fg: #f8f8f2;
+  --pink: #ff79c6;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.hero {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+}
+
+#sea {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.gate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9vh;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
+.gate a {
+  font-family: 'VGA437', monospace;
+  font-size: clamp(0.95rem, 2.4vw, 1.35rem);
+  letter-spacing: 0.12em;
+  color: var(--fg);
+  text-decoration: none;
+  text-shadow: 0 0 12px var(--pink), 0 0 32px rgba(255, 121, 198, 0.45);
+  animation: gateblink 1.15s steps(2, jump-none) infinite;
+}
+.gate a:hover, .gate a:focus-visible {
+  color: var(--pink);
+  animation: none;
+  outline: none;
+}
+@keyframes gateblink {
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gate a { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <canvas id="sea" aria-label="Particles morphing between the words lame, server, and lame server"></canvas>
+  <nav class="gate">
+    <a href="/board/">▒▓█ PRESS ANY KEY █▓▒</a>
+  </nav>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var sea = document.getElementById('sea');
+  var sctx = sea.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  var parts = [];
+  var targetSets = [];
+  var seq = 0;
+  var mx = -9999, my = -9999;
+
+  var GLYPHS = 'aekrst&?;{}~λπψΣ∞·'.split('');
+  var COLORS = ['rgba(248,248,242,0.92)', 'rgba(248,248,242,0.5)', '#8be9fd', '#bd93f9', '#ff79c6'];
+  var CELL = 28;
+  var atlas = null;
+
+  function buildAtlas() {
+    atlas = document.createElement('canvas');
+    atlas.width = CELL * GLYPHS.length;
+    atlas.height = CELL * COLORS.length;
+    var a = atlas.getContext('2d');
+    a.textAlign = 'center';
+    a.textBaseline = 'middle';
+    a.font = '700 19px Pagella, Georgia, serif';
+    for (var c = 0; c < COLORS.length; c++) {
+      a.fillStyle = COLORS[c];
+      for (var g = 0; g < GLYPHS.length; g++) {
+        a.fillText(GLYPHS[g], g * CELL + CELL / 2, c * CELL + CELL / 2 + 1);
+      }
+    }
+  }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  /* lines: array of strings, drawn centered and stacked */
+  function textPoints(lines) {
+    var off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    var o = off.getContext('2d');
+    var size = Math.min((H * 0.72) / lines.length, W * 0.28);
+    o.font = '700 ' + size + 'px Pagella, Georgia, serif';
+    var maxW = 0;
+    for (var i = 0; i < lines.length; i++) {
+      maxW = Math.max(maxW, o.measureText(lines[i]).width);
+    }
+    if (maxW > W * 0.86) {
+      size *= (W * 0.86) / maxW;
+      o.font = '700 ' + size + 'px Pagella, Georgia, serif';
+    }
+    o.textAlign = 'center';
+    o.textBaseline = 'middle';
+    o.fillStyle = '#fff';
+    var lineH = size * 1.08;
+    var y0 = H / 2 - (lineH * (lines.length - 1)) / 2;
+    for (var l = 0; l < lines.length; l++) {
+      o.fillText(lines[l], W / 2, y0 + l * lineH);
+    }
+    var data = o.getImageData(0, 0, W, H).data;
+    var pts = [];
+    var stride = 4;
+    for (var y = 0; y < H; y += stride) {
+      for (var x = 0; x < W; x += stride) {
+        if (data[(y * W + x) * 4 + 3] > 128) pts.push([x, y]);
+      }
+    }
+    return shuffle(pts);
+  }
+
+  function wavePts() {
+    var pts = [];
+    var rows = [-38, 0, 38];
+    for (var r = 0; r < rows.length; r++) {
+      for (var i = 0; i <= 260; i++) {
+        var x = W * 0.07 + (W * 0.86) * (i / 260);
+        var y = H / 2 + rows[r] + Math.sin((x / W) * Math.PI * 4 + r * 0.9) * H * 0.11;
+        pts.push([x, y]);
+      }
+    }
+    return shuffle(pts);
+  }
+
+  function spiralPts() {
+    var pts = [];
+    var turns = 3.2, maxR = Math.min(W, H) * 0.34;
+    for (var i = 0; i <= 700; i++) {
+      var th = (i / 700) * turns * 2 * Math.PI;
+      var r = (i / 700) * maxR;
+      pts.push([W / 2 + r * Math.cos(th), H / 2 + r * Math.sin(th)]);
+    }
+    return shuffle(pts);
+  }
+
+  function lissaPts() {
+    var pts = [];
+    var rx = Math.min(W, H) * 0.36, ry = Math.min(W, H) * 0.26;
+    for (var i = 0; i <= 700; i++) {
+      var t = (i / 700) * 2 * Math.PI;
+      pts.push([W / 2 + rx * Math.sin(3 * t + Math.PI / 2), H / 2 + ry * Math.sin(2 * t)]);
+    }
+    return shuffle(pts);
+  }
+
+  var SEQUENCE = [
+    { hold: 3600, make: function () { return textPoints(['lame']); } },
+    { hold: 3000, make: function () { return wavePts(); } },
+    { hold: 3600, make: function () { return textPoints(['server']); } },
+    { hold: 3000, make: function () { return spiralPts(); } },
+    { hold: 4600, make: function () { return textPoints(['lame', 'server']); } },
+    { hold: 3000, make: function () { return lissaPts(); } }
+  ];
+
+  function rebuildTargets() {
+    targetSets = SEQUENCE.map(function (s) { return s.make(); });
+  }
+
+  function makeParts() {
+    var n = Math.min(1500, Math.floor((W * H) / 950));
+    parts = [];
+    for (var i = 0; i < n; i++) {
+      parts.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        g: Math.floor(Math.random() * GLYPHS.length),
+        c: Math.random() < 0.7 ? (Math.random() < 0.6 ? 0 : 1) : 2 + Math.floor(Math.random() * 3),
+        s: 7 + Math.random() * 8,
+        ease: 0.028 + Math.random() * 0.055,
+        js: 0.4 + Math.random() * 1.2,
+        jp: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function sizeSea() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = sea.clientWidth;
+    H = sea.clientHeight;
+    sea.width = W * DPR;
+    sea.height = H * DPR;
+    sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  function drawParts(time) {
+    sctx.clearRect(0, 0, W, H);
+    var tgt = targetSets[seq];
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      var t = tgt[i % tgt.length];
+      p.x += (t[0] - p.x) * p.ease;
+      p.y += (t[1] - p.y) * p.ease;
+      p.x += Math.sin(time * 0.001 * p.js + p.jp) * 0.3;
+      p.y += Math.cos(time * 0.0012 * p.js + p.jp) * 0.3;
+      var dx = p.x - mx, dy = p.y - my;
+      var d2 = dx * dx + dy * dy;
+      if (d2 < 8100 && d2 > 1) {
+        var d = Math.sqrt(d2);
+        var f = ((90 - d) / 90) * 3.2;
+        p.x += (dx / d) * f;
+        p.y += (dy / d) * f;
+      }
+      sctx.drawImage(atlas, p.g * CELL, p.c * CELL, CELL, CELL,
+        p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+    }
+  }
+
+  /* the gate: any key, click, or tap enters the board
+     (Tab excluded so keyboard users can reach the visible link) */
+  window.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.key === 'Tab') return;
+    location.href = '/board/';
+  });
+  window.addEventListener('pointerdown', function () {
+    location.href = '/board/';
+  });
+
+  function init() {
+    sizeSea();
+    buildAtlas();
+    rebuildTargets();
+    makeParts();
+
+    if (REDUCED) {
+      /* hold still on the two-line form */
+      seq = 4;
+      var tgt = targetSets[seq];
+      for (var i = 0; i < parts.length; i++) {
+        var t = tgt[i % tgt.length];
+        parts[i].x = t[0];
+        parts[i].y = t[1];
+      }
+      drawParts(0);
+      return;
+    }
+
+    window.addEventListener('pointermove', function (e) {
+      mx = e.clientX;
+      my = e.clientY;
+    });
+    window.addEventListener('pointerleave', function () {
+      mx = -9999; my = -9999;
+    });
+
+
+    var switchAt = performance.now() + SEQUENCE[0].hold;
+    (function loop(ts) {
+      if (ts > switchAt) {
+        seq = (seq + 1) % SEQUENCE.length;
+        switchAt = ts + SEQUENCE[seq].hold;
+      }
+      drawParts(ts);
+      requestAnimationFrame(loop);
+    })(performance.now());
+
+    var rt;
+    window.addEventListener('resize', function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () {
+        sizeSea();
+        rebuildTargets();
+      }, 200);
+    });
+  }
+
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('700 100px Pagella').then(init, init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

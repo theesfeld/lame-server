@@ -1,0 +1,91 @@
+#+TITLE: hello, world
+#+DATE: <2026-07-06 Mon>
+#+PHILE: 0x01
+#+FILETAGS: :meta:
+#+DESCRIPTION: the board comes online — what this place is, how it's built, and why your browser is rendering ANSI art in 2026.
+
+Welcome to the board. You found phile =0x01=, which makes you either an early
+visitor or someone who enjoys reading things in order. Both are respected here.
+
+* what this is
+
+lameserver.net is a personal board: philes written in org-mode, built by a
+single Emacs Lisp file, and served as static HTML with no frameworks, no
+trackers, and no javascript required to read anything. The aesthetic debt is
+owed to Renegade, WWIV, ACiD Productions, and Phrack — the places where
+text was the whole interface and it still looked better than most of today's
+web.
+
+** the rules of the board
+
+There is exactly one rule, in the finest sysop tradition:
+
+#+BEGIN_QUOTE
+Don't be boring. — every sysop, 1984–1997, uninterrupted
+#+END_QUOTE
+
+* how it works
+
+Every phile starts life as an org file. At publish time Emacs walks the
+manifest, exports each post through a derived HTML backend, signs the source
+with GPG, and converts every image into colored ANSI art. If you're reading
+this with a mouse, click any image to see what it "really" looks like —
+though the ANSI version is arguably more real.
+
+** the pipeline, in one table
+
+| stage    | tool         | output                    |
+|----------+--------------+---------------------------|
+| write    | org-mode     | NNNN-slug.org             |
+| convert  | chafa        | truecolor SGR escapes     |
+| parse    | 60 lines of elisp | spans + scoped css   |
+| sign     | gpg          | detached armor signature  |
+| serve    | github pages | what you're reading       |
+
+** proof it renders code
+
+Elisp, because the whole build is elisp:
+
+#+BEGIN_SRC emacs-lisp
+(defun lameserver--phile-hex (n)
+  "Phile numbers wear hex like everything else on this board."
+  (format "0x%02x" n))
+
+(lameserver--phile-hex 1)  ; => "0x01"
+#+END_SRC
+
+And shell, because there's always shell:
+
+#+BEGIN_SRC sh
+# verify this very phile
+curl -sO https://lameserver.net/phile/0x01/source.org
+curl -sO https://lameserver.net/phile/0x01/source.org.asc
+gpg --verify source.org.asc source.org
+#+END_SRC
+
+*** a note on the colors
+
+Everything you see is the Dracula palette, treated as a 16-color ANSI
+terminal that happens to have excellent taste.
+
+* proof it renders images
+
+A plasma fractal, rendered as half-block ANSI — the same technique scene
+artists used when a JPEG was a week's download:
+
+[[file:../media/plasma.png]]
+
+And the same idea in braille dots, which packs eight subpixels into every
+character cell:
+
+#+ATTR_LAMESERVER: :symbols braille
+[[file:../media/swirl.png]]
+
+* what's next
+
+More philes. The board index is at [[https://lameserver.net/board/][/board/]], the feed is at =/feed.xml=,
+and every post ships its signed source. If a phile ever fails verification,
+trust the signature, not the server.
+
+Press =?= if you want to drive this place with your keyboard. It would be
+disappointing if you didn't.

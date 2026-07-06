@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>lameserver</title>
+<link>https://lameserver.net/</link>
+<description>philes from the board at lameserver.net</description>
+<atom:link href="https://lameserver.net/feed.xml" rel="self" type="application/rss+xml"/>
+<lastBuildDate>Mon, 06 Jul 2026 12:47:27 -0400</lastBuildDate>
+<item>
+<title>hello, world</title>
+<link>https://lameserver.net/phile/0x01/</link>
+<guid isPermaLink="true">https://lameserver.net/phile/0x01/</guid>
+<pubDate>Mon, 06 Jul 2026 00:00:00 -0400</pubDate>
+<description>the board comes online — what this place is, how it&apos;s built, and why your browser is rendering ANSI art in 2026.</description>
+</item>
+</channel>
+</rss>
