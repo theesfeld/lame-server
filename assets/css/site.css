@@ -293,10 +293,8 @@ main {
   max-width: max-content;
   box-shadow: 0 0 18px rgba(0, 0, 0, 0.4);
 }
-.ansi-img .ansi-art { cursor: pointer; }
-.ansi-img img.real { max-width: 100%; height: auto; display: block; cursor: pointer; }
-.ansi-img figcaption { margin-top: 0.4rem; }
-.img-toggle, .share-fedi, .share-copy {
+.ansi-missing { color: var(--red); padding: 0.6rem; }
+.share-fedi, .share-copy {
   font: inherit;
   font-size: 0.8rem;
   background: none;
@@ -305,7 +303,7 @@ main {
   cursor: pointer;
   padding: 0;
 }
-.img-toggle:hover, .share-fedi:hover, .share-copy:hover { background: var(--comment); color: var(--bg); }
+.share-fedi:hover, .share-copy:hover { background: var(--comment); color: var(--bg); }
 
 .emblem { border: none; background: none; font-size: 9px; }
 

@@ -21,7 +21,8 @@ org/media/               →  lameserver.net/media/   (images become ANSI art)
   armor signature: `gpg --verify source.org.asc source.org`. Public key at
   `/pubkey.asc`.
 - **Images render as colored ANSI** (half-block, or braille via
-  `#+ATTR_LAMESERVER: :symbols braille`). Click to toggle the real image.
+  `#+ATTR_LAMESERVER: :symbols braille`). The source rasters are build
+  inputs only — the published site is text all the way down.
 - **Keyboard-driven**: `?` on any page shows the hotkeys. j/k/enter drive
   the board like a proper file listing.
 - Splash gate at `/`, PRESS ANY KEY to enter.

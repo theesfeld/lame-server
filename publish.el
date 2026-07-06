@@ -413,16 +413,14 @@ per-cell backgrounds would wash the dots out on smooth gradients."
     (org-export-read-attribute :attr_lameserver parent)))
 
 (defun lameserver--image-figure (path org-file attrs)
-  "Full <figure>: ANSI render plus hidden real image for the toggle."
+  "Image as pure ANSI text.  The source raster is a build input only —
+nothing but text ships."
   (let* ((width (min lameserver--ansi-max-width
                      (max 20 (or (and (plist-get attrs :width)
                                       (string-to-number (plist-get attrs :width)))
                                  lameserver--ansi-width))))
          (symbols (or (plist-get attrs :symbols) "half+space"))
          (id (format "ansi%d" (cl-incf lameserver--image-counter)))
-         (url (or (lameserver--media-url path org-file)
-                  (progn (lameserver--log "lameserver: %s is outside org/media/" path)
-                         path)))
          (alt (or (plist-get attrs :alt) (file-name-base path)))
          (ansi (lameserver--ansi-render
                 (expand-file-name path (file-name-directory org-file))
@@ -432,15 +430,12 @@ per-cell backgrounds would wash the dots out on smooth gradients."
                   ("quad" "quad+half+space")
                   (_ symbols)))))
     (if (not ansi)
-        (format "<figure class=\"ansi-img\"><img src=\"%s\" alt=\"%s\" loading=\"lazy\"></figure>"
-                url (lameserver--escape alt))
-      (format (concat "<figure class=\"ansi-img\" data-mode=\"ansi\">"
-                      "%s"
-                      "<img class=\"real\" src=\"%s\" alt=\"%s\" loading=\"lazy\" hidden>"
-                      "<figcaption><button type=\"button\" class=\"img-toggle\" "
-                      "aria-pressed=\"false\">[i] ansi&#8596;image</button></figcaption>"
-                      "</figure>")
-              ansi url (lameserver--escape alt)))))
+        (progn
+          (lameserver--log "lameserver: WARNING no ANSI renderer — %s dropped" path)
+          (format "<pre class=\"ansi-art ansi-missing\">[ image: %s — no renderer at build time ]</pre>"
+                  (lameserver--escape (file-name-nondirectory path))))
+      (format "<figure class=\"ansi-img\" role=\"img\" aria-label=\"%s\">%s</figure>"
+              (lameserver--escape alt) ansi))))
 
 (defun lameserver--av-html (path org-file)
   "Audio/video element inside box-drawing chrome."
@@ -458,10 +453,12 @@ per-cell backgrounds would wash the dots out on smooth gradients."
          (ext (downcase (or (file-name-extension (or path "")) "")))
          (org-file (plist-get info :input-file)))
     (cond
+     ;; images always become ANSI text — described or not, nothing raster ships
      ((and (string= type "file")
-           (member ext '("png" "jpg" "jpeg" "gif" "webp"))
-           (not desc))
-      (lameserver--image-figure path org-file (lameserver--attr-plist link)))
+           (member ext '("png" "jpg" "jpeg" "gif" "webp")))
+      (lameserver--image-figure path org-file
+                                (append (and desc (list :alt desc))
+                                        (lameserver--attr-plist link))))
      ((and (string= type "file")
            (member ext '("mp4" "webm" "mp3" "ogg" "flac" "wav")))
       (lameserver--av-html path org-file))
@@ -865,11 +862,17 @@ verify with: gpg --verify source.org.asc source.org"
   (when (file-directory-p src) (copy-directory src dst t t t)))
 
 (defun lameserver--write-static ()
-  ;; assets (minus static/) -> docs/assets ; media -> docs/media
+  ;; assets (minus static/) -> docs/assets.  Media: only audio/video ship —
+  ;; images exist solely as build inputs for the ANSI conversion.
   (let ((tmp-static (lameserver--path "assets/static")))
     (lameserver--copy-tree (lameserver--path "assets") (lameserver--docs "assets"))
     (delete-directory (lameserver--docs "assets/static") t)
     (lameserver--copy-tree (lameserver--path "org/media") (lameserver--docs "media"))
+    (dolist (img (ignore-errors
+                   (directory-files-recursively
+                    (lameserver--docs "media")
+                    "\\.\\(?:png\\|jpe?g\\|gif\\|webp\\|svg\\)\\'")))
+      (delete-file img))
     ;; splash + CNAME + .nojekyll at the docs root
     (copy-file (expand-file-name "index.html" tmp-static)
                (lameserver--docs "index.html") t)

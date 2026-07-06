@@ -20,7 +20,6 @@
     ['g / G', 'first / last phile (board)'],
     ['c', 'cycle category filter (board)'],
     ['n / p', 'next / previous phile'],
-    ['t', 'toggle all images ansi↔real'],
     ['f', 'fold / unfold all sections'],
     ['?', 'this panel'],
     ['esc', 'close this panel']

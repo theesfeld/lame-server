@@ -28,9 +28,9 @@ Don't be boring. — every sysop, 1984–1997, uninterrupted
 
 Every phile starts life as an org file. At publish time Emacs walks the
 manifest, exports each post through a derived HTML backend, signs the source
-with GPG, and converts every image into colored ANSI art. If you're reading
-this with a mouse, click any image to see what it "really" looks like —
-though the ANSI version is arguably more real.
+with GPG, and converts every image into colored ANSI art. The original
+rasters never leave the build machine — what you are reading is text all
+the way down, exactly as a board should be.
 
 ** the pipeline, in one table
 

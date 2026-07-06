@@ -58,28 +58,6 @@
     headings.forEach(function (h) { setFold(h, allFolded); });
   }
 
-  /* ---------------- ansi <-> image toggling ---------------- */
-
-  function toggleFigure(fig) {
-    var toAnsi = fig.dataset.mode !== 'ansi';
-    fig.dataset.mode = toAnsi ? 'ansi' : 'real';
-    var art = fig.querySelector('.ansi-art');
-    var img = fig.querySelector('img.real');
-    if (art) art.hidden = !toAnsi;
-    if (img) img.hidden = toAnsi;
-    var btn = fig.querySelector('.img-toggle');
-    if (btn) btn.setAttribute('aria-pressed', toAnsi ? 'false' : 'true');
-  }
-
-  var figures = Array.prototype.slice.call(document.querySelectorAll('.ansi-img[data-mode]'));
-  figures.forEach(function (fig) {
-    fig.addEventListener('click', function (e) {
-      if (e.target.closest('.ansi-art, img.real, .img-toggle')) toggleFigure(fig);
-    });
-  });
-
-  function toggleAllFigures() { figures.forEach(toggleFigure); }
-
   /* ---------------- share ---------------- */
 
   document.querySelectorAll('.share-fedi').forEach(function (btn) {
@@ -132,7 +110,6 @@
         if (pv) location.href = pv.href;
         break;
       }
-      case 't': toggleAllFigures(); break;
       case 'f': foldAll(); break;
     }
   });
